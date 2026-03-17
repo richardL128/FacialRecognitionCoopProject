@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+docker-compose.yml
+.env*
+.llm
+docs
+tests
+db/seeds
+.prettierrc
+.prettierignore
+.editorconfig

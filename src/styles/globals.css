@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+@import '@progress/kendo-theme-default/dist/all.css';
+@import './payevo-design-system.css';
+@import './payevo-kendo-theme.css';

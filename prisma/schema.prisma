@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+// Update these roles to match your application's access model.
+// Also update src/lib/permissions/index.ts when roles change.
+
+enum Role {
+  PLATFORM_ADMIN  // Internal — full access to all tenants
+  ADMIN           // Organisation-level administrator
+  MANAGER         // Team / functional manager
+  USER            // Standard application user
+  VIEWER          // Read-only access
+}
+
+// ─── Tenants ──────────────────────────────────────────────────
+// Top-level isolation unit. All data belongs to a Tenant.
+
+model Tenant {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  users User[]
+
+  @@map("tenants")
+}
+
+// ─── Users ────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId      String    @unique @map("external_id")  // ID from your identity provider
+  email           String
+  firstName       String?   @map("first_name")
+  lastName        String?   @map("last_name")
+  role            Role
+  tenantId        String    @map("tenant_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  dashboardLayout Json?     @map("dashboard_layout")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([externalId])
+  @@map("users")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────
+// Append-only. REVOKE UPDATE, DELETE applied via db/migrations/audit_log_protection.sql
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String                              // e.g. 'user.record.updated'
+  entityType String   @map("entity_type")        // e.g. 'user'
+  entityId   String   @map("entity_id") @db.Uuid
+  beforeData Json?    @map("before_data")
+  afterData  Json?    @map("after_data")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+// ─── Feature Flag Overrides ───────────────────────────────────
+// Three-tier override system for feature flags.
+// Tier 1 (Platform Admin): GLOBAL or per-TENANT overrides
+// Tier 2 (Admin):          CLIENT-level overrides within their tenant
+// Tier 3 (Future):         USER-level overrides
+
+enum FlagScope {
+  GLOBAL  // Applies to all tenants (platform admin only)
+  TENANT  // Applies to a specific tenant
+  CLIENT  // Applies to a client within a tenant
+  USER    // Future: applies to a specific user
+}
+
+model FeatureFlagOverride {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  flagKey   String    @map("flag_key")      // e.g. "module:feature-name"
+  scope     FlagScope @default(TENANT)
+  tenantId  String?   @map("tenant_id") @db.Uuid   // null for GLOBAL scope
+  scopeId   String?   @map("scope_id")  @db.Uuid   // clientId for CLIENT, userId for USER
+  enabled   Boolean   @default(true)
+  reason    String?                                 // Why this override was set
+  setBy     String    @map("set_by") @db.Uuid       // User who created/updated
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([flagKey, scope, tenantId, scopeId], name: "uq_flag_override")
+  @@index([tenantId])
+  @@map("feature_flag_overrides")
+}
+
+// ─── Add your domain models below ─────────────────────────────
+// Remember: every tenant-scoped model needs:
+//   - tenantId String @map("tenant_id") @db.Uuid
+//   - @@index([tenantId])
+//   - deletedAt DateTime? @map("deleted_at")  (for soft delete)

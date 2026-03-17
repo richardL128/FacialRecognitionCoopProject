@@ -1,0 +1,1328 @@
+@import '@progress/kendo-theme-default/dist/all.css';
+
+/*
+  PayEvo Kendo Theme Bridge
+
+  This file keeps Kendo components visually aligned with the existing PayEvo
+  design system without requiring every page to style Kendo primitives by hand.
+*/
+
+:root[data-theme='payevo'] {
+  --evo-kendo-font-family: 'Open Sans', sans-serif;
+  --evo-kendo-text: rgb(var(--pe-grey-100));
+  --evo-kendo-subtle-text: rgb(var(--pe-grey-60));
+  --evo-kendo-border: rgb(var(--pe-grey-20));
+  --evo-kendo-border-strong: rgb(var(--pe-grey-40));
+  --evo-kendo-heading: rgb(var(--pe-blue-80));
+  --evo-kendo-surface: rgb(var(--pe-grey-5));
+  --evo-kendo-surface-muted: rgb(var(--pe-ice));
+  --evo-kendo-surface-elevated: rgb(var(--pe-grey-5));
+  --evo-kendo-primary: rgb(var(--pe-blue-100));
+  --evo-kendo-primary-dark: rgb(var(--pe-blue-80));
+  --evo-kendo-shadow: var(--pe-shadow-standard, 0 2px 8px rgba(0, 0, 0, 0.15));
+  --evo-kendo-hover: color-mix(in srgb, var(--evo-kendo-surface) 70%, rgb(var(--pe-blue-10)) 30%);
+  --evo-kendo-hover-soft: color-mix(
+    in srgb,
+    var(--evo-kendo-surface) 88%,
+    rgb(var(--pe-blue-10)) 12%
+  );
+  --evo-kendo-selection: rgb(var(--pe-blue-20));
+  --evo-kendo-selection-text: var(--evo-kendo-text);
+  --evo-kendo-on-primary: rgb(var(--pe-grey-5));
+  --evo-kendo-icon-bg: rgb(var(--pe-blue-20));
+  --evo-kendo-border-medium: rgb(var(--pe-grey-50));
+  --evo-kendo-border-heavy: rgb(var(--pe-grey-70));
+  --evo-kendo-scrollbar-gutter: 14px;
+}
+
+:root[data-theme='payevo-dark'],
+:root[data-theme='dark'] {
+  --evo-kendo-text: rgb(var(--pe-grey-100));
+  --evo-kendo-subtle-text: rgb(var(--pe-grey-80));
+  --evo-kendo-border: rgb(var(--pe-grey-20));
+  --evo-kendo-border-strong: rgb(var(--pe-grey-40));
+  --evo-kendo-heading: rgb(var(--pe-blue-60));
+  --evo-kendo-surface: rgb(var(--pe-secondary));
+  --evo-kendo-surface-muted: color-mix(
+    in srgb,
+    rgb(var(--pe-secondary)) 82%,
+    rgb(var(--pe-blue-20)) 18%
+  );
+  --evo-kendo-surface-elevated: color-mix(in srgb, rgb(var(--pe-secondary)) 88%, white 12%);
+  --evo-kendo-primary: rgb(var(--pe-blue-100));
+  --evo-kendo-primary-dark: rgb(var(--pe-blue-80));
+  --evo-kendo-hover: color-mix(in srgb, var(--evo-kendo-surface) 70%, rgb(var(--pe-blue-20)) 30%);
+  --evo-kendo-hover-soft: color-mix(
+    in srgb,
+    var(--evo-kendo-surface) 84%,
+    rgb(var(--pe-blue-20)) 16%
+  );
+  --evo-kendo-selection: color-mix(in srgb, rgb(var(--pe-blue-20)) 72%, rgb(var(--pe-blue-80)) 28%);
+  --evo-kendo-selection-text: rgb(var(--pe-grey-100));
+  --evo-kendo-on-primary: rgb(var(--pe-grey-5));
+  --evo-kendo-icon-bg: rgb(var(--pe-blue-20));
+  --evo-kendo-border-medium: rgb(var(--pe-grey-50));
+  --evo-kendo-border-heavy: rgb(var(--pe-grey-70));
+}
+
+.k-animation-container,
+.k-button,
+.k-card,
+.k-chart,
+.k-dialog,
+.k-drawer,
+.k-grid,
+.k-input,
+.k-menu,
+.k-popup,
+.k-toolbar,
+.k-tooltip,
+.k-window {
+  font-family: var(--evo-kendo-font-family);
+}
+
+.k-grid,
+.k-card,
+.k-dialog,
+.k-window,
+.k-toolbar,
+.k-popup,
+.k-menu,
+.k-tooltip {
+  background: var(--evo-kendo-surface);
+  border-color: var(--evo-kendo-border);
+  color: var(--evo-kendo-text);
+  box-shadow: var(--evo-kendo-shadow);
+}
+
+.k-grid-header,
+.k-grid .k-table-thead,
+.k-toolbar,
+.k-dialog-titlebar,
+.k-window-titlebar {
+  background: var(--evo-kendo-surface-muted);
+  border-color: var(--evo-kendo-border);
+}
+
+.k-grid .k-table-th,
+.k-grid .k-column-title,
+.k-dialog-title,
+.k-window-title,
+.k-toolbar,
+.k-chart-title,
+.k-chart-legend,
+.k-input,
+.k-picker,
+.k-button {
+  color: var(--evo-kendo-text);
+}
+
+.k-grid .k-table-row:hover,
+.k-grid .k-table-row.k-hover,
+.k-grid .k-table-alt-row:hover,
+.k-grid .k-master-row:hover {
+  background: var(--evo-kendo-hover);
+}
+
+.k-grid .k-selected,
+.k-grid .k-selected:hover,
+.k-grid .k-table-row.k-selected,
+.k-grid .k-table-row.k-selected:hover {
+  background: var(--evo-kendo-selection);
+  color: var(--evo-kendo-selection-text);
+}
+
+.k-grid,
+.k-grid-header,
+.k-grid-content,
+.k-grid .k-table,
+.k-input,
+.k-picker,
+.k-button,
+.k-dialog,
+.k-window,
+.k-card,
+.k-toolbar {
+  border-radius: var(--pe-radius-md);
+}
+
+.k-input,
+.k-picker,
+.k-textbox,
+.k-dropdownlist,
+.k-combobox,
+.k-multiselect {
+  background: var(--evo-kendo-surface);
+  border-color: var(--evo-kendo-border);
+  color: var(--evo-kendo-text);
+}
+
+.k-input:focus,
+.k-input.k-focus,
+.k-picker:focus,
+.k-picker.k-focus,
+.k-textbox:focus,
+.k-textbox.k-focus {
+  border-color: var(--evo-kendo-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--evo-kendo-primary) 24%, transparent);
+}
+
+.k-button-solid-primary,
+.k-button.k-primary {
+  background: var(--evo-kendo-primary);
+  border-color: var(--evo-kendo-primary);
+  color: var(--evo-kendo-on-primary);
+}
+
+.k-button-solid-primary:hover,
+.k-button.k-primary:hover,
+.k-button-solid-primary.k-hover,
+.k-button.k-primary.k-hover {
+  background: var(--evo-kendo-primary-dark);
+  border-color: var(--evo-kendo-primary-dark);
+}
+
+.k-button-flat,
+.k-button-outline {
+  color: var(--evo-kendo-primary);
+}
+
+.k-grid .k-table-th,
+.k-grid .k-table-td,
+.k-grid .k-group-cell,
+.k-grid .k-hierarchy-cell {
+  border-color: var(--evo-kendo-border);
+}
+
+.k-pager,
+.k-pager-nav,
+.k-pager-info,
+.k-pager-sizes {
+  color: var(--evo-kendo-subtle-text);
+}
+
+.k-chart,
+.k-chart-surface {
+  background: transparent;
+}
+
+.evo-kendo-grid-region {
+  background: transparent;
+}
+
+.evo-kendo-card {
+  background: var(--evo-kendo-surface);
+  border: 1px solid var(--evo-kendo-border);
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--evo-kendo-shadow);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.evo-kendo-card.evo-kendo-grid-card,
+.evo-kendo-grid__panel {
+  background: var(--evo-kendo-surface);
+}
+
+.evo-kendo-grid__panel--plain {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.evo-kendo-card__header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.evo-kendo-card__title {
+  color: var(--evo-kendo-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.evo-kendo-card__subtitle {
+  color: var(--evo-kendo-subtle-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}
+
+.evo-kendo-grid__search {
+  min-width: 240px;
+}
+
+.evo-kendo-grid__shell {
+  --evo-grid-row-height: 60px;
+  --evo-grid-toolbar-control-height: 40px;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid {
+  background: var(--evo-kendo-surface);
+  border: 1px solid var(--evo-kendo-border);
+  border-radius: var(--pe-radius-sm) var(--pe-radius-sm) 0 0;
+  box-shadow: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.evo-kendo-grid__shell--borderless .evo-kendo-grid {
+  border: 0;
+  border-radius: 0;
+}
+
+.evo-kendo-grid__header {
+  border-bottom: 1px solid var(--evo-kendo-border-strong);
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.evo-kendo-grid__header-main {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 75px;
+}
+
+.evo-kendo-grid__header-copy {
+  min-width: 0;
+}
+
+.evo-kendo-grid__title {
+  color: var(--evo-kendo-text);
+  font-size: 1.625rem;
+  font-weight: 300;
+  line-height: 1;
+  margin: 0;
+}
+
+.evo-kendo-grid__subtitle {
+  color: var(--evo-kendo-subtle-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0.35rem 0 0;
+}
+
+.evo-kendo-grid__header-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.evo-kendo-grid__search-wrap,
+.evo-kendo-grid__overflow-wrap {
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.evo-kendo-grid__search-wrap {
+  height: 50px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  width: 50px;
+  transition: width 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.evo-kendo-grid__search-wrap--open {
+  width: clamp(12rem, 18vw, 16rem);
+}
+
+.evo-kendo-grid__overflow-wrap {
+  gap: 0.625rem;
+}
+
+.evo-kendo-grid__icon-button {
+  align-items: center;
+  background: var(--evo-kendo-icon-bg);
+  border: 0;
+  border-radius: 999px;
+  color: var(--evo-kendo-primary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 50px;
+  justify-content: center;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+  width: 50px;
+}
+
+.evo-kendo-grid__search-wrap .evo-kendo-grid__icon-button {
+  position: absolute;
+  right: 0;
+  flex-shrink: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.evo-kendo-grid__icon-button:hover,
+.evo-kendo-grid__icon-button:focus-visible {
+  background: color-mix(in srgb, var(--evo-kendo-icon-bg) 72%, white 28%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--evo-kendo-icon-bg) 65%, transparent);
+  outline: none;
+}
+
+.evo-kendo-grid__icon-button svg {
+  height: 20px;
+  width: 20px;
+}
+
+.evo-kendo-grid__search-inline,
+.evo-kendo-grid__overflow-menu {
+  font-family: var(--evo-kendo-font-family);
+}
+
+.evo-kendo-grid__search-inline {
+  align-items: center;
+  background: var(--evo-kendo-surface);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  display: flex;
+  inset: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scaleX(0.92);
+  transform-origin: right center;
+  transition:
+    opacity 180ms ease,
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease;
+}
+
+.evo-kendo-grid__search-inline--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scaleX(1);
+}
+
+.evo-kendo-grid__search-inline .k-input,
+.evo-kendo-grid__search-inline .k-input-inner,
+.evo-kendo-grid__search-inline .k-textbox,
+.evo-kendo-grid__search-inline .k-input-md {
+  font-family: var(--evo-kendo-font-family);
+}
+
+.evo-kendo-grid__search-inline .k-input {
+  background: var(--evo-kendo-surface);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  height: 50px;
+  min-height: 50px;
+  padding-inline-end: 4.25rem;
+  width: 100%;
+}
+
+.evo-kendo-grid__search-inline .k-input-inner {
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  padding-block: 0;
+  padding-inline: 1.05rem 4.25rem;
+}
+
+.evo-kendo-grid__search-inline .k-input-inner::placeholder {
+  color: color-mix(in srgb, var(--evo-kendo-subtle-text) 72%, transparent);
+  opacity: 1;
+}
+
+.evo-kendo-grid__overflow-menu {
+  background: var(--evo-kendo-surface-elevated);
+  border: 1px solid var(--evo-kendo-border);
+  border-radius: var(--pe-radius-sm);
+  box-shadow: var(--evo-kendo-shadow);
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 5;
+  min-width: 14rem;
+  overflow: hidden;
+  padding: 0.25rem;
+}
+
+.evo-kendo-grid__overflow-item {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--evo-kendo-text);
+  cursor: pointer;
+  display: block;
+  font-family: var(--evo-kendo-font-family);
+  font-size: 0.875rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.evo-kendo-grid__overflow-item:hover,
+.evo-kendo-grid__overflow-item:focus-visible {
+  background: var(--evo-kendo-hover-soft);
+  outline: none;
+}
+
+.evo-kendo-grid__overflow-item:disabled {
+  color: var(--evo-kendo-subtle-text);
+  cursor: not-allowed;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-thead,
+.evo-kendo-grid__shell .evo-kendo-grid .k-toolbar,
+.evo-kendo-grid__shell .evo-kendo-grid .k-pager {
+  background: var(--evo-kendo-surface);
+  box-shadow: none;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-wrap,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-content,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-content,
+.evo-kendo-grid__shell .evo-kendo-grid .k-virtual-content,
+.evo-kendo-grid__shell .evo-kendo-grid .k-virtual-scrollable-wrap {
+  background: var(--evo-kendo-surface);
+  box-sizing: border-box;
+  inline-size: 100%;
+  scrollbar-gutter: stable;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-content table,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-content table,
+.evo-kendo-grid__shell .evo-kendo-grid .k-virtual-content table {
+  background-clip: padding-box;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-content.k-virtual-content {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-content.k-virtual-content::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-content.k-virtual-content > .k-height-container {
+  background: transparent;
+  border: 0;
+  inline-size: 1px;
+  min-inline-size: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.evo-kendo-grid__shell
+  .evo-kendo-grid
+  .k-grid-content.k-virtual-content
+  > .k-height-container
+  > div {
+  background: transparent;
+  inline-size: 1px;
+  min-inline-size: 1px;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid table {
+  min-width: max(100%, var(--evo-grid-min-width, 100%));
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-toolbar {
+  border: 0;
+  padding: 0 0 0.75rem;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header {
+  border-bottom: 0;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-hierarchy-col,
+.evo-kendo-grid__shell .evo-kendo-grid .k-hierarchy-cell {
+  border: 0;
+  max-width: 0;
+  min-width: 0;
+  padding: 0;
+  width: 0;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-hierarchy-cell > * {
+  display: none;
+}
+
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid colgroup col.k-hierarchy-col,
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid thead .k-hierarchy-col,
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid tbody .k-hierarchy-cell,
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid .k-detail-row .k-hierarchy-cell {
+  border: 0;
+  max-width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  width: 0 !important;
+}
+
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid tbody .k-hierarchy-cell > *,
+.evo-kendo-grid__shell--hide-hierarchy-column .evo-kendo-grid .k-detail-row .k-hierarchy-cell > * {
+  display: none;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid thead th,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-th,
+.evo-kendo-grid__shell .evo-kendo-grid tbody td,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-td,
+.evo-kendo-grid__shell .evo-kendo-grid .k-group-cell,
+.evo-kendo-grid__shell .evo-kendo-grid .k-hierarchy-cell {
+  border-inline-end: 0;
+  border-inline-start: 0;
+  border-bottom: 0.5px solid var(--evo-kendo-border);
+  min-height: var(--evo-grid-row-height);
+  padding-inline: 10px;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid thead th,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-th {
+  background: var(--evo-kendo-surface);
+  padding-block: 0;
+  vertical-align: top;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid tbody td,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-td {
+  background: var(--evo-kendo-surface);
+  color: var(--evo-kendo-text);
+  font-size: 0.875rem;
+  line-height: 1.3;
+  padding-block: 0.75rem;
+  vertical-align: middle;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid tbody tr:hover td,
+.evo-kendo-grid__shell .evo-kendo-grid tbody tr.k-hover td,
+.evo-kendo-grid__shell .evo-kendo-grid tbody tr.k-master-row:hover td {
+  background: var(--evo-kendo-hover-soft);
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid thead th > .k-cell-inner,
+.evo-kendo-grid__shell .evo-kendo-grid .k-table-th > .k-cell-inner {
+  align-items: flex-start;
+  gap: 0.125rem;
+  min-height: var(--evo-grid-row-height);
+  padding-bottom: 1rem;
+  padding-top: 0.9375rem;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid thead th,
+.evo-kendo-grid__shell .evo-kendo-grid thead th .k-link,
+.evo-kendo-grid__shell .evo-kendo-grid .evo-kendo-grid__header-cell,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-title {
+  color: var(--evo-kendo-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid tbody td,
+.evo-kendo-grid__shell .evo-kendo-grid .evo-kendo-grid__cell {
+  color: var(--evo-kendo-text);
+  font-family: var(--evo-kendo-font-family);
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-sort-icon,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu,
+.evo-kendo-grid__shell .evo-kendo-grid .k-icon-button {
+  color: var(--evo-kendo-subtle-text);
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .evo-kendo-grid__header-cell,
+.evo-kendo-grid__shell .evo-kendo-grid .evo-kendo-grid__cell {
+  font-family: var(--evo-kendo-font-family);
+}
+
+.evo-kendo-grid__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: flex-start;
+}
+
+.evo-kendo-grid__toolbar-left,
+.evo-kendo-grid__toolbar-right {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.evo-kendo-grid__search.k-input {
+  border-radius: var(--pe-radius-sm);
+  min-width: 16rem;
+  min-height: var(--evo-grid-toolbar-control-height);
+}
+
+.evo-kendo-grid__search .k-input-inner {
+  font-size: 0.875rem;
+  min-height: calc(var(--evo-grid-toolbar-control-height) - 2px);
+  padding-inline: 10px;
+}
+
+.evo-kendo-grid__toolbar .k-button,
+.evo-kendo-grid__toolbar button:not(.k-button):not(.evo-kendo-grid__toolbar-pill),
+.evo-kendo-grid__toolbar select,
+.evo-kendo-grid__toolbar input:not([type='checkbox']):not([type='radio']) {
+  border-radius: var(--pe-radius-sm);
+  font-family: var(--evo-kendo-font-family);
+  font-size: 0.875rem;
+  min-height: var(--evo-grid-toolbar-control-height);
+}
+
+.evo-kendo-grid__toolbar button:not(.k-button):not(.evo-kendo-grid__toolbar-pill),
+.evo-kendo-grid__toolbar select,
+.evo-kendo-grid__toolbar input:not([type='checkbox']):not([type='radio']) {
+  background: var(--evo-kendo-surface);
+  border: 1px solid var(--evo-kendo-border);
+  color: var(--evo-kendo-text);
+}
+
+.evo-kendo-grid__toolbar button:not(.k-button):not(.evo-kendo-grid__toolbar-pill) {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  padding-inline: 0.75rem;
+}
+
+.evo-kendo-grid__toolbar select,
+.evo-kendo-grid__toolbar input:not([type='checkbox']):not([type='radio']) {
+  padding-inline: 0.75rem;
+}
+
+.evo-kendo-grid__footer {
+  background: var(--evo-kendo-surface);
+  border-top: 0;
+  padding-top: 0.75rem;
+}
+
+.evo-kendo-grid__pager {
+  align-items: center;
+  color: var(--evo-kendo-subtle-text);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  justify-content: flex-end;
+  min-height: 52px;
+  padding: 0 0.25rem;
+}
+
+.evo-kendo-grid__pager-controls {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.evo-kendo-grid__pager-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--evo-kendo-subtle-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.5rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.5rem;
+}
+
+.evo-kendo-grid__pager-button:hover,
+.evo-kendo-grid__pager-button:focus-visible {
+  background: var(--evo-kendo-hover-soft);
+  color: var(--evo-kendo-primary);
+  outline: none;
+}
+
+.evo-kendo-grid__pager-button:disabled {
+  color: color-mix(in srgb, var(--evo-kendo-subtle-text) 45%, transparent);
+  cursor: not-allowed;
+}
+
+.evo-kendo-grid__pager-button svg {
+  height: 12px;
+  width: 12px;
+}
+
+.evo-kendo-grid__pager-indicators {
+  align-items: center;
+  color: var(--evo-kendo-text);
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.evo-kendo-grid__pager-value {
+  border-bottom: 1px solid var(--evo-kendo-border-strong);
+  display: inline-flex;
+  font-size: 1rem;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding-bottom: 0.1rem;
+}
+
+.evo-kendo-grid__pager-separator,
+.evo-kendo-grid__pager-info {
+  color: var(--evo-kendo-subtle-text);
+  font-size: 0.875rem;
+}
+
+.evo-kendo-grid__footer-meta {
+  align-items: center;
+  color: var(--evo-kendo-text);
+  display: inline-flex;
+  font-size: 0.75rem;
+  gap: 0.3125rem;
+  padding: 0.25rem 0;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu {
+  align-items: center;
+  border-radius: 999px;
+  color: var(--evo-kendo-subtle-text);
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  margin-left: 0.125rem;
+  width: 20px;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu:hover,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu:hover,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu:hover,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu:focus-visible,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu:focus-visible,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu:focus-visible {
+  background: var(--evo-kendo-hover-soft);
+  color: var(--evo-kendo-primary);
+  outline: none;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu .k-svg-icon,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu .k-svg-icon,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu .k-svg-icon {
+  display: none;
+}
+
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-header-menu::before,
+.evo-kendo-grid__shell .evo-kendo-grid .k-grid-column-menu::before,
+.evo-kendo-grid__shell .evo-kendo-grid .k-column-menu::before {
+  content: '\22EE';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.k-animation-container .k-grid-columnmenu-popup,
+.k-grid-columnmenu-popup,
+.k-animation-container .k-column-menu-popup,
+.k-column-menu-popup {
+  background: var(--evo-kendo-surface-elevated);
+  border: 1px solid var(--evo-kendo-border);
+  border-radius: var(--pe-radius-sm);
+  box-shadow: var(--pe-shadow-standard);
+  overflow: hidden;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu,
+.k-grid-columnmenu-popup .k-columnmenu-item-content,
+.k-grid-columnmenu-popup .k-filter-menu,
+.k-column-menu-popup .evo-kendo-column-menu,
+.k-column-menu-popup .k-columnmenu-item-content,
+.k-column-menu-popup .k-filter-menu {
+  font-family: var(--evo-kendo-font-family);
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu,
+.k-column-menu-popup .evo-kendo-column-menu {
+  background: var(--evo-kendo-surface-elevated);
+  color: var(--evo-kendo-text);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  min-width: 16.4375rem;
+  width: 16.4375rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu,
+.k-grid-columnmenu-popup .evo-kendo-column-menu *,
+.k-column-menu-popup .evo-kendo-column-menu,
+.k-column-menu-popup .evo-kendo-column-menu * {
+  font-family: 'Open Sans', var(--evo-kendo-font-family) !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-columnmenu-item-content,
+.k-column-menu-popup .evo-kendo-column-menu .k-columnmenu-item-content {
+  padding: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__panel,
+.k-column-menu-popup .evo-kendo-column-menu__panel {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 1.875rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0.9375rem 1.25rem 1.875rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__filter-body,
+.k-column-menu-popup .evo-kendo-column-menu__filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__heading,
+.k-column-menu-popup .evo-kendo-column-menu__heading {
+  color: var(--evo-kendo-text);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  margin: 0;
+  padding: 0.6875rem 0.625rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__filter-section,
+.k-column-menu-popup .evo-kendo-column-menu__filter-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select,
+.k-column-menu-popup .evo-kendo-column-menu__select {
+  width: 100%;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select--logic,
+.k-column-menu-popup .evo-kendo-column-menu__select--logic {
+  width: 4.25rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__logic-static,
+.k-column-menu-popup .evo-kendo-column-menu__logic-static {
+  border-bottom: 1px solid var(--evo-kendo-border-heavy);
+  color: var(--evo-kendo-text);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  min-height: 2.625rem;
+  padding: 0.6875rem 0.625rem;
+  width: 4.25rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-picker,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-dropdownlist,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-picker,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-dropdownlist {
+  align-items: center;
+  background: var(--evo-kendo-surface-elevated) !important;
+  border: 0;
+  border-bottom: 1px solid var(--evo-kendo-border-heavy) !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  color: var(--evo-kendo-text) !important;
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  min-height: 2.625rem;
+  padding: 0.6875rem 0.625rem;
+  text-align: left;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-button,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-select-button,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-inner,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-button,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-select-button,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-inner,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-value-text {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-value-text,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-inner,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-inner {
+  padding-inline: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-button,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-select-button,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-button,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-select-button {
+  background: var(--evo-kendo-surface-elevated) !important;
+  color: var(--evo-kendo-text) !important;
+  min-width: auto;
+  padding-inline: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-icon,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-svg-icon,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-icon,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-svg-icon {
+  color: var(--evo-kendo-text) !important;
+  fill: var(--evo-kendo-text) !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select.k-focus .k-picker,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-picker:focus-within,
+.k-column-menu-popup .evo-kendo-column-menu__select.k-focus .k-picker,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-picker:focus-within {
+  border-bottom-color: var(--evo-kendo-primary);
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__filter-cell,
+.k-column-menu-popup .evo-kendo-column-menu__filter-cell {
+  align-items: center;
+  border-bottom: 1px solid var(--evo-kendo-border-heavy);
+  display: flex;
+  min-height: 2.625rem;
+  padding: 0 0.625rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input,
+.k-column-menu-popup .evo-kendo-column-menu__input {
+  width: 100%;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input-inner,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-picker,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-picker-wrap,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-textbox,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-numerictextbox,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-dateinput,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input-inner,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-picker,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-picker-wrap,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-textbox,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-numerictextbox,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-dateinput,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input-value-text {
+  background: var(--evo-kendo-surface-elevated) !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  color: var(--evo-kendo-text) !important;
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  min-height: 2.5rem;
+  padding: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-picker,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-textbox,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-numerictextbox,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-dateinput,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-picker,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-textbox,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-numerictextbox,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-dateinput {
+  border-bottom: 0 !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input-inner,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input-inner,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input-value-text {
+  padding-inline: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-picker,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-numerictextbox,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-picker,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-dropdownlist,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-numerictextbox {
+  width: 100%;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-picker-button,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-input-button,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input .k-select-button,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-picker-button,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-input-button,
+.k-column-menu-popup .evo-kendo-column-menu__input .k-select-button {
+  background: var(--evo-kendo-surface-elevated) !important;
+  border: 0;
+  color: var(--evo-kendo-text) !important;
+  padding-inline: 0;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input input,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__input input::placeholder,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__select .k-input-value-text,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__group-label,
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-button-text,
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-list-item-text,
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-list-item,
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-input-inner,
+.k-grid-columnmenu-popup .evo-kendo-column-menu .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__input input,
+.k-column-menu-popup .evo-kendo-column-menu__input input::placeholder,
+.k-column-menu-popup .evo-kendo-column-menu__select .k-input-value-text,
+.k-column-menu-popup .evo-kendo-column-menu__group-label,
+.k-column-menu-popup .evo-kendo-column-menu .k-button-text,
+.k-column-menu-popup .evo-kendo-column-menu .k-list-item-text,
+.k-column-menu-popup .evo-kendo-column-menu .k-list-item,
+.k-column-menu-popup .evo-kendo-column-menu .k-input-inner,
+.k-column-menu-popup .evo-kendo-column-menu .k-input-value-text {
+  color: var(--evo-kendo-text) !important;
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__actions,
+.k-column-menu-popup .evo-kendo-column-menu__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action,
+.k-column-menu-popup .evo-kendo-column-menu__action {
+  align-items: center;
+  border-radius: var(--pe-radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1.125rem;
+  font-weight: 400;
+  height: 2.5rem;
+  justify-content: center;
+  min-width: 5rem;
+  opacity: 1;
+  padding: 0.625rem 1.25rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--primary,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--primary:hover,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--primary:focus-visible,
+.k-column-menu-popup .evo-kendo-column-menu__action--primary,
+.k-column-menu-popup .evo-kendo-column-menu__action--primary:hover,
+.k-column-menu-popup .evo-kendo-column-menu__action--primary:focus-visible {
+  background: var(--evo-kendo-primary) !important;
+  border: 1px solid var(--evo-kendo-primary) !important;
+  color: var(--evo-kendo-on-primary) !important;
+  opacity: 1 !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--secondary,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--secondary:hover,
+.k-grid-columnmenu-popup .evo-kendo-column-menu__action--secondary:focus-visible,
+.k-column-menu-popup .evo-kendo-column-menu__action--secondary,
+.k-column-menu-popup .evo-kendo-column-menu__action--secondary:hover,
+.k-column-menu-popup .evo-kendo-column-menu__action--secondary:focus-visible {
+  background: var(--evo-kendo-surface-elevated) !important;
+  border: 1px solid var(--evo-kendo-primary) !important;
+  color: var(--evo-kendo-primary) !important;
+  opacity: 1 !important;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__footer,
+.k-column-menu-popup .evo-kendo-column-menu__footer {
+  border-top: 1px solid var(--evo-kendo-border-medium);
+  padding: 1.875rem 1.25rem;
+}
+
+.k-animation-container .evo-kendo-column-menu__select-popup,
+.evo-kendo-column-menu__select-popup {
+  border: 1px solid var(--evo-kendo-border);
+  border-radius: var(--pe-radius-sm);
+  box-shadow: var(--pe-shadow-standard);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+}
+
+.k-animation-container .evo-kendo-column-menu__select-popup .k-list-item,
+.evo-kendo-column-menu__select-popup .k-list-item {
+  color: var(--evo-kendo-text);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__group-toggle,
+.k-column-menu-popup .evo-kendo-column-menu__group-toggle {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.625rem;
+  justify-content: space-between;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__group-label,
+.k-column-menu-popup .evo-kendo-column-menu__group-label {
+  color: var(--evo-kendo-text);
+  font-family: 'Open Sans', var(--evo-kendo-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__switch,
+.k-column-menu-popup .evo-kendo-column-menu__switch {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 1.25rem;
+  padding: 0;
+  position: relative;
+  width: 2rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__switch-track,
+.k-column-menu-popup .evo-kendo-column-menu__switch-track {
+  background: var(--evo-kendo-border-medium);
+  border-radius: 999px;
+  inset: 0.3125rem 0;
+  position: absolute;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__switch-thumb,
+.k-column-menu-popup .evo-kendo-column-menu__switch-thumb {
+  background: var(--evo-kendo-on-primary);
+  border: 1px solid var(--evo-kendo-border-strong);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  height: 0.875rem;
+  left: 0;
+  position: absolute;
+  top: 0.1875rem;
+  transition:
+    left 160ms ease,
+    border-color 160ms ease;
+  width: 0.875rem;
+}
+
+.k-grid-columnmenu-popup
+  .evo-kendo-column-menu__switch.is-active
+  .evo-kendo-column-menu__switch-track,
+.k-column-menu-popup .evo-kendo-column-menu__switch.is-active .evo-kendo-column-menu__switch-track {
+  background: var(--evo-kendo-primary);
+}
+
+.k-grid-columnmenu-popup
+  .evo-kendo-column-menu__switch.is-active
+  .evo-kendo-column-menu__switch-thumb,
+.k-column-menu-popup .evo-kendo-column-menu__switch.is-active .evo-kendo-column-menu__switch-thumb {
+  border-color: var(--evo-kendo-primary);
+  left: 1rem;
+}
+
+.k-grid-columnmenu-popup .evo-kendo-column-menu__switch:focus-visible,
+.k-column-menu-popup .evo-kendo-column-menu__switch:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--evo-kendo-primary) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.evo-kendo-grid__empty {
+  color: var(--evo-kendo-subtle-text);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .evo-kendo-grid__header-main {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .evo-kendo-grid__header-actions {
+    justify-content: flex-start;
+  }
+
+  .evo-kendo-grid__search-wrap {
+    width: 50px;
+  }
+
+  .evo-kendo-grid__search-wrap--open {
+    width: min(11.5rem, calc(100vw - 9rem));
+  }
+
+  .evo-kendo-grid__pager {
+    justify-content: flex-start;
+  }
+}
+
+.evo-kendo-grid__empty-title {
+  color: var(--evo-kendo-text);
+  font-weight: 700;
+}
+
+.evo-kendo-grid__detail {
+  background: var(--evo-kendo-surface-muted);
+  border-radius: var(--pe-radius-md);
+  padding: 1rem;
+}
+
+@media (max-width: 767px) {
+  .evo-kendo-grid-card {
+    padding: 0.75rem;
+  }
+
+  .evo-kendo-grid__toolbar-left,
+  .evo-kendo-grid__toolbar-right,
+  .evo-kendo-grid__search {
+    width: 100%;
+  }
+
+  .evo-kendo-grid__toolbar {
+    align-items: stretch;
+  }
+
+  .evo-kendo-card__header {
+    flex-direction: column;
+  }
+
+  .evo-kendo-grid__shell .k-pager {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .evo-kendo-grid__shell .k-pager-info,
+  .evo-kendo-grid__shell .k-pager-sizes {
+    width: 100%;
+  }
+}
