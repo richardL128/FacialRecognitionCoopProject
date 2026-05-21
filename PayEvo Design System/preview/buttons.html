@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:20px;background:#fff;font-family:var(--font-sans);}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .lbl{width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7987A9;font-weight:600;margin-bottom:4px;}
+  .btn{font-family:'Open Sans',sans-serif;font-size:14px;font-weight:600;padding:8px 18px;border-radius:5px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .primary{background:#2285D0;color:#fff;}
+  .primary.hover{background:#165585;}
+  .primary.disabled{background:#C4C4C4;color:#fff;}
+  .outline{background:#fff;color:#2285D0;border-color:#2285D0;}
+  .tertiary{background:transparent;color:#2285D0;}
+  .danger{background:#F8333C;color:#fff;}
+</style></head><body>
+<div class="lbl">Primary</div>
+<div class="row">
+  <button class="btn primary">+ Button +</button>
+  <button class="btn primary hover">+ Button +</button>
+  <button class="btn primary" style="background:#0A4D7E">+ Button +</button>
+  <button class="btn primary disabled">+ Button +</button>
+</div>
+<div class="lbl">Secondary · Tertiary · Danger</div>
+<div class="row">
+  <button class="btn outline">+ Button +</button>
+  <button class="btn tertiary">+ Button +</button>
+  <button class="btn danger">Delete</button>
+</div>
+</body></html>

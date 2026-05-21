@@ -19,12 +19,12 @@
  */
 
 export type FlagCategory =
-  | 'module'       // Top-level navigation modules
-  | 'tool'         // Standalone tools and assistants
-  | 'capability'   // Cross-cutting capabilities within modules
-  | 'ai'           // AI-powered features
-  | 'billing'      // Billing, payments, package limits
-  | 'compliance'   // Compliance and regulatory features
+  | 'module' // Top-level navigation modules
+  | 'tool' // Standalone tools and assistants
+  | 'capability' // Cross-cutting capabilities within modules
+  | 'ai' // AI-powered features
+  | 'billing' // Billing, payments, package limits
+  | 'compliance' // Compliance and regulatory features
   | 'integration'; // Third-party integrations
 
 export type FlagScope = 'global' | 'tenant' | 'client';
@@ -67,8 +67,8 @@ export const FEATURE_FLAG_CATALOG: FeatureFlagMeta[] = [
   },
   {
     key: 'module:feature-a',
-    label: 'Feature A',
-    description: 'Placeholder — replace with your first feature module',
+    label: 'Employee Database',
+    description: 'Employee image library used for camera recognition comparisons',
     category: 'module',
     allowedScopes: ['global', 'tenant', 'client'],
     personas: ['admin', 'manager', 'user'],
@@ -132,6 +132,14 @@ export const FEATURE_FLAG_CATALOG: FeatureFlagMeta[] = [
     category: 'capability',
     allowedScopes: ['global', 'tenant'],
     personas: ['admin'],
+  },
+  {
+    key: 'CAMERA_CAPTURE_ENABLED',
+    label: 'Camera Capture',
+    description: 'Device-native browser camera capture and secure image upload',
+    category: 'capability',
+    allowedScopes: ['global', 'tenant'],
+    personas: ['admin', 'manager', 'user'],
   },
   {
     key: 'cap:custom-fields',

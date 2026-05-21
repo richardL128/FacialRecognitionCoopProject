@@ -6,110 +6,155 @@
 /* ─── Typography Scale (from components.md Section 1.2) ─────────────────── */
 
 :root:is([data-theme='payevo'], [data-theme='payevo-dark']) {
-  /* Typography tokens */
-  --pe-type-h1: 700 36px/1.2 'Open Sans', sans-serif;
-  --pe-type-h2: 600 30px/1.25 'Open Sans', sans-serif;
-  --pe-type-h3: 600 24px/1.3 'Open Sans', sans-serif;
-  --pe-type-h4: 400 18px/1.4 'Open Sans', sans-serif;
-  --pe-type-h5: 600 16px/1.4 'Open Sans', sans-serif;
-  --pe-type-body: 400 14px/1.5 'Open Sans', sans-serif;
-  --pe-type-small: 400 12px/1.5 'Open Sans', sans-serif;
-  --pe-type-button: 600 14px/1 'Open Sans', sans-serif;
+  /* Typography tokens — Open Sans, matching design system weight/size scale */
+  --pe-font-sans: var(--font-open-sans, 'Open Sans'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --pe-type-display: 300 50px/1.1 var(--pe-font-sans);
+  --pe-type-h1: 700 36px/1.2 var(--pe-font-sans);
+  --pe-type-h2: 300 30px/1.25 var(--pe-font-sans);
+  --pe-type-h3: 300 26px/1.3 var(--pe-font-sans);
+  --pe-type-h4: 400 24px/1.4 var(--pe-font-sans);
+  --pe-type-h5: 600 20px/1.4 var(--pe-font-sans);
+  --pe-type-h6: 600 18px/1.4 var(--pe-font-sans);
+  --pe-type-body-lg: 400 16px/1.5 var(--pe-font-sans);
+  --pe-type-body: 400 14px/1.5 var(--pe-font-sans);
+  --pe-type-small: 400 12px/1.5 var(--pe-font-sans);
+  --pe-type-button: 600 14px/1 var(--pe-font-sans);
+  --pe-type-eyebrow: 600 10px/1 var(--pe-font-sans);
 
-  /* Border radius */
-  --pe-radius-md: 8px;
-  --pe-radius-sm: 5px;
+  /* Border radius — design system: 5px for buttons/inputs/cards, 50px for hero panels */
+  --pe-radius-sm: 3px;
+  --pe-radius-md: 5px;
+  --pe-radius-lg: 12px;
+  --pe-radius-hero: 50px;
+  --pe-radius-circular: 9999px;
+
+  /* Design system canonical shadow tokens */
+  --pe-shadow-card: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --pe-shadow-card-hover: 0 4px 12px rgba(0,0,0,0.08);
+  --pe-shadow-elevated: 0 4px 16px rgba(0,0,0,0.10);
+  --pe-shadow-focus: 0 0 0 3px rgba(34,133,208,0.25);
+  --pe-shadow-focus-error: 0 0 0 3px rgba(248,51,60,0.25);
+
+  /* Motion */
+  --pe-ease: cubic-bezier(.2,.0,.2,1);
+  --pe-dur-fast: 120ms;
+  --pe-dur: 180ms;
+  --pe-dur-slow: 280ms;
 }
 
 /* ─── Light Theme Tokens ────────────────────────────────────────────────────── */
 
 :root[data-theme='payevo'] {
+  /* Font */
+  font-family: var(--pe-font-sans, 'Open Sans', sans-serif);
+
   /* Surface */
   --pe-primary: 255 255 255;
   --pe-secondary: 248 249 250;
-  --pe-ice: 243 245 247;
+  --pe-ice: 244 248 251; /* #F4F8FB — design system --c-background */
 
-  /* Grey scale */
-  --pe-grey-5: 249 250 251;
-  --pe-grey-10: 243 244 246;
-  --pe-grey-20: 229 231 235;
-  --pe-grey-40: 156 163 175;
-  --pe-grey-60: 107 114 128;
-  --pe-grey-50: 121 135 169;
-  --pe-grey-70: 82 95 117;
-  --pe-grey-80: 75 85 99;
-  --pe-grey-100: 17 24 39;
+  /* Grey scale — cool slate, matching design system exactly */
+  --pe-grey-5:   248 249 251; /* #F8F9FB */
+  --pe-grey-10:  242 243 246; /* #F2F3F6 */
+  --pe-grey-20:  228 231 238; /* #E4E7EE */
+  --pe-grey-40:  201 207 221; /* #C9CFDD */
+  --pe-grey-50:  121 135 169; /* #7987A9 — shadow-blue / slate secondary text */
+  --pe-grey-60:  175 183 203; /* #AFB7CB */
+  --pe-grey-70:  148 159 186; /* #949FBA */
+  --pe-grey-80:  72 82 92;    /* #48525C — independence dark slate */
+  --pe-grey-100: 68 68 68;    /* #444444 — design system neutral-black */
 
-  /* Blue */
-  --pe-blue-5: 244 249 253;   /* #F4F9FD */
-  --pe-blue-10: 235 246 255;  /* #EBF6FF */
-  --pe-blue-20: 211 231 246;  /* #D3E7F6 */
-  --pe-blue-40: 167 206 236;  /* #A7CEEC */
-  --pe-blue-60: 122 182 227;  /* #7AB6E3 */
-  --pe-blue-80: 22 85 133;    /* #165585 */
-  --pe-blue-100: 34 133 208;  /* #2285D0 */
+  /* Blue ramp — canonical design system values */
+  --pe-blue-5:   244 249 253; /* #F4F9FD */
+  --pe-blue-10:  235 246 255; /* #EBF6FF — alice-blue, row hover */
+  --pe-blue-20:  211 231 246; /* #D3E7F6 */
+  --pe-blue-40:  167 206 236; /* #A7CEEC */
+  --pe-blue-60:  122 182 227; /* #7AB6E3 */
+  --pe-blue-80:  22 85 133;   /* #165585 — blue-sapphire, hover/active */
+  --pe-blue-100: 34 133 208;  /* #2285D0 — PE primary */
 
-  /* Green */
-  --pe-green-10: 236 253 245;
-  --pe-green-100: 22 163 74;
+  /* Navy deep (for hero gradient start) */
+  --pe-navy-deep: 6 20 54;    /* #061436 — maastricht-blue */
+  --pe-navy:      10 36 99;   /* #0A2463 — royal-blue */
 
-  /* Red */
-  --pe-red-10: 254 242 242;
-  --pe-red-100: 220 38 38;
+  /* Green — exact design system #4CAF50 */
+  --pe-green-5:  246 251 246; /* #F6FBF6 */
+  --pe-green-10: 241 255 242; /* #F1FFF2 — honeydew success banner */
+  --pe-green-20: 219 239 220; /* #DBEFDC */
+  --pe-green-100: 76 175 80;  /* #4CAF50 */
 
-  /* Yellow */
-  --pe-yellow-10: 254 252 232;
-  --pe-yellow-100: 202 138 4;
+  /* Red — exact design system #F8333C */
+  --pe-red-10:  254 235 235;  /* #FEEBEB */
+  --pe-red-100: 248 51 60;    /* #F8333C */
+
+  /* Yellow — exact design system #F5B700 */
+  --pe-yellow-10:  254 248 229; /* #FEF8E5 */
+  --pe-yellow-100: 245 183 0;   /* #F5B700 */
+
+  /* Orange — partner sub-brand #F75C03 */
+  --pe-orange-10:  254 239 230; /* #FEEFE6 */
+  --pe-orange-100: 247 92 3;    /* #F75C03 */
 
   /* Purple */
   --pe-purple-100: 147 51 234;
 
   /* Shadows */
   --pe-shadow-subtle: 0 1px 2px rgb(0 0 0 / 0.04);
-  --pe-shadow-standard: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
-  --pe-shadow-medium: 0 4px 6px rgb(0 0 0 / 0.07), 0 2px 4px rgb(0 0 0 / 0.06);
-  --pe-shadow-overlay: 0 10px 25px rgb(0 0 0 / 0.12), 0 4px 10px rgb(0 0 0 / 0.08);
+  --pe-shadow-standard: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --pe-shadow-medium: 0 4px 12px rgba(0,0,0,0.08);
+  --pe-shadow-overlay: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 /* ─── Dark Theme Tokens ─────────────────────────────────────────────────────── */
 
 :root[data-theme='payevo-dark'] {
+  /* Font */
+  font-family: var(--pe-font-sans, 'Open Sans', sans-serif);
+
   /* Surface */
   --pe-primary: 15 17 23;
   --pe-secondary: 24 27 33;
   --pe-ice: 30 34 42;
 
   /* Grey scale (inverted for dark backgrounds) */
-  --pe-grey-5: 249 250 251;
-  --pe-grey-10: 35 39 48;
-  --pe-grey-20: 55 65 81;
-  --pe-grey-40: 75 85 99;
-  --pe-grey-50: 148 163 184;
-  --pe-grey-60: 156 163 175;
-  --pe-grey-70: 176 190 210;
-  --pe-grey-80: 209 213 219;
+  --pe-grey-5:   249 250 251;
+  --pe-grey-10:  35 39 48;
+  --pe-grey-20:  55 65 81;
+  --pe-grey-40:  75 85 99;
+  --pe-grey-50:  148 163 184;
+  --pe-grey-60:  156 163 175;
+  --pe-grey-70:  176 190 210;
+  --pe-grey-80:  209 213 219;
   --pe-grey-100: 243 244 246;
 
   /* Blue */
-  --pe-blue-5: 6 20 54;       /* #061436 */
-  --pe-blue-10: 10 37 99;     /* #0A2463 */
-  --pe-blue-20: 244 249 253;  /* #F4F9FD */
-  --pe-blue-40: 211 231 246;  /* #D3E7F6 */
-  --pe-blue-60: 167 206 236;  /* #A7CEEC */
-  --pe-blue-80: 122 182 227;  /* #7AB6E3 */
+  --pe-blue-5:   6 20 54;    /* #061436 */
+  --pe-blue-10:  10 37 99;   /* #0A2463 */
+  --pe-blue-20:  244 249 253; /* #F4F9FD */
+  --pe-blue-40:  211 231 246; /* #D3E7F6 */
+  --pe-blue-60:  167 206 236; /* #A7CEEC */
+  --pe-blue-80:  122 182 227; /* #7AB6E3 */
   --pe-blue-100: 34 133 208;  /* #2285D0 */
 
+  /* Navy deep */
+  --pe-navy-deep: 6 20 54;
+  --pe-navy:      10 36 99;
+
   /* Green */
-  --pe-green-10: 20 83 45;
+  --pe-green-10:  20 83 45;
   --pe-green-100: 74 222 128;
 
   /* Red */
-  --pe-red-10: 127 29 29;
+  --pe-red-10:  127 29 29;
   --pe-red-100: 248 113 113;
 
   /* Yellow */
-  --pe-yellow-10: 113 63 18;
+  --pe-yellow-10:  113 63 18;
   --pe-yellow-100: 250 204 21;
+
+  /* Orange */
+  --pe-orange-10:  80 40 15;
+  --pe-orange-100: 247 92 3;
 
   /* Purple */
   --pe-purple-100: 192 132 252;
@@ -122,28 +167,42 @@
 }
 
 /* Typography utility classes */
+
+/* Apply Open Sans globally for PayEvo themes */
+html:is([data-theme='payevo'], [data-theme='payevo-dark']),
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) body {
+  font-family: var(--pe-font-sans, 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 14px;
+  color: rgb(var(--pe-grey-100));
+  background: rgb(var(--pe-ice));
+}
+
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-h1 {
   font: var(--pe-type-h1);
+  letter-spacing: -0.02em;
   color: rgb(var(--pe-grey-100));
 }
 
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-h2 {
   font: var(--pe-type-h2);
+  letter-spacing: -0.02em;
   color: rgb(var(--pe-grey-100));
 }
 
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-h3 {
   font: var(--pe-type-h3);
+  letter-spacing: -0.02em;
   color: rgb(var(--pe-grey-100));
 }
 
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-h4 {
   font: var(--pe-type-h4);
-  color: rgb(var(--pe-grey-80));
+  color: rgb(var(--pe-grey-100));
 }
 
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-h5 {
   font: var(--pe-type-h5);
+  letter-spacing: -0.02em;
   color: rgb(var(--pe-grey-100));
 }
 
@@ -154,7 +213,14 @@ html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-body {
 
 html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-small {
   font: var(--pe-type-small);
-  color: rgb(var(--pe-grey-80));
+  color: rgb(var(--pe-grey-50));
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-eyebrow {
+  font: var(--pe-type-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(var(--pe-grey-50));
 }
 
 /* ─── Shadow Utilities ──────────────────────────────────────────────────── */
@@ -209,9 +275,12 @@ html[data-theme='payevo'] .pe-topnav-bar * {
 /* Avatar text must stay light (on a coloured avatar circle).
    Selector is more specific than the wildcard above — no !important needed. */
 html:is([data-theme='payevo'], [data-theme='payevo-dark'], [data-theme='dark'])
-  .pe-topnav-bar .pe-topnav-avatar,
+  .pe-topnav-bar
+  .pe-topnav-avatar,
 html:is([data-theme='payevo'], [data-theme='payevo-dark'], [data-theme='dark'])
-  .pe-topnav-bar .pe-topnav-avatar * {
+  .pe-topnav-bar
+  .pe-topnav-avatar
+  * {
   color: rgb(var(--pe-grey-5));
 }
 
@@ -232,12 +301,37 @@ html[data-theme='payevo'][data-theme='payevo'] .pe-topnav .pe-subnav {
   color: rgb(var(--pe-grey-5));
 }
 
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-topnav-avatar--brand {
+  background: rgb(var(--pe-blue-100));
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav--brand-gradient {
+  /* Canonical PayEvo hero gradient: maastricht navy → PE blue */
+  background: linear-gradient(
+    135deg,
+    #02314D 0%,
+    rgb(var(--pe-blue-100)) 100%
+  );
+}
+
 html[data-theme='payevo'] .pe-subnav *:not(.pe-nav-panel *) {
   color: rgb(var(--pe-grey-5));
 }
 
 html[data-theme='payevo'] .pe-subnav a:not(.pe-nav-panel *):hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav .pe-subnav-dropdown {
+  border: 1px solid rgb(var(--pe-grey-20));
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--pe-shadow-overlay);
+  overflow: hidden;
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav .pe-subnav-dropdown__item {
+  display: block;
+  padding: 8px 16px;
 }
 
 /* Active nav link in sub-nav: frosted highlight */
@@ -336,6 +430,10 @@ html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel {
 
 html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel [class*='border-b'],
 html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel [class*='border-t'] {
+  border-color: rgb(var(--pe-grey-40));
+}
+
+html[data-theme='payevo-dark'] .pe-subnav .pe-subnav-dropdown {
   border-color: rgb(var(--pe-grey-40));
 }
 

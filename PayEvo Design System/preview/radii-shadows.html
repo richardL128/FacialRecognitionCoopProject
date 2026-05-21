@@ -1,0 +1,79 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Radii &amp; shadows</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:#F4F8FB;font-family:var(--font-sans);color:var(--ink);}
+  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey-100);margin:0 0 10px;}
+  section{margin-bottom:22px;}
+  .grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;}
+  .b{background:#fff;height:64px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grey-100);font-family:var(--font-mono);border:1px solid var(--grey-20);}
+  .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--grey-100);font-weight:600;margin-top:4px;font-family:var(--font-mono);}
+  .shadow-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .shadow-grid .b{height:80px;border:0;border-radius:5px;}
+  .stroke-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;}
+  .stroke-grid .b{background:#fff;flex-direction:column;gap:6px;}
+  .stroke-grid .ln{background:var(--ink);width:80%;}
+</style></head><body>
+
+<section>
+  <h3>Radius scale</h3>
+  <div class="grid">
+    <div><div class="b" style="border-radius:0">0</div><div class="l">none</div></div>
+    <div><div class="b" style="border-radius:1px">1</div><div class="l">1px</div></div>
+    <div><div class="b" style="border-radius:2px">2</div><div class="l">2px</div></div>
+    <div><div class="b" style="border-radius:3px">3</div><div class="l">3px</div></div>
+    <div><div class="b" style="border-radius:4px">4</div><div class="l">4px</div></div>
+    <div><div class="b" style="border-radius:5px;background:var(--pe-primary);color:#fff;border-color:transparent;">5 ★</div><div class="l">default</div></div>
+    <div><div class="b" style="border-radius:6px">6</div><div class="l">6px</div></div>
+    <div><div class="b" style="border-radius:8px">8</div><div class="l">8px</div></div>
+    <div><div class="b" style="border-radius:10px">10</div><div class="l">10px</div></div>
+    <div><div class="b" style="border-radius:12px">12</div><div class="l">12px</div></div>
+    <div><div class="b" style="border-radius:15px">15</div><div class="l">15 · avatar</div></div>
+    <div><div class="b" style="border-radius:20px">20</div><div class="l">20px</div></div>
+    <div><div class="b" style="border-radius:25px">25</div><div class="l">25px</div></div>
+    <div><div class="b" style="border-radius:30px">30</div><div class="l">30px</div></div>
+    <div><div class="b" style="border-radius:40px">40</div><div class="l">40px</div></div>
+    <div><div class="b" style="border-radius:9999px;background:var(--pe-primary);color:#fff;border-color:transparent;">circle</div><div class="l">circular</div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Stroke weights</h3>
+  <div class="stroke-grid">
+    <div><div class="b"><div class="ln" style="height:0.5px"></div><span>0.5</span></div><div class="l">0.5</div></div>
+    <div><div class="b"><div class="ln" style="height:1px"></div><span>1</span></div><div class="l">1px</div></div>
+    <div><div class="b"><div class="ln" style="height:1.5px"></div><span>1.5</span></div><div class="l">1.5 · outline</div></div>
+    <div><div class="b"><div class="ln" style="height:2px"></div><span>2</span></div><div class="l">2 · solid icon</div></div>
+    <div><div class="b"><div class="ln" style="height:3px"></div><span>3</span></div><div class="l">3px</div></div>
+    <div><div class="b"><div class="ln" style="height:4px"></div><span>4</span></div><div class="l">4px</div></div>
+    <div><div class="b"><div class="ln" style="height:6px"></div><span>6</span></div><div class="l">6px</div></div>
+    <div><div class="b"><div class="ln" style="height:10px"></div><span>10</span></div><div class="l">10px</div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Shadow recipes</h3>
+  <div class="shadow-grid">
+    <div><div class="b" style="box-shadow:0 1px 2px rgba(0,0,0,.06)">sm</div><div class="l">shadow-sm</div></div>
+    <div><div class="b" style="box-shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04)">card</div><div class="l">shadow-card</div></div>
+    <div><div class="b" style="box-shadow:0 4px 12px rgba(0,0,0,.08)">hover</div><div class="l">card-hover</div></div>
+    <div><div class="b" style="box-shadow:0 4px 16px rgba(0,0,0,.10)">elevated</div><div class="l">elevated</div></div>
+    <div><div class="b" style="box-shadow:0 8px 24px rgba(0,0,0,.12)">floating</div><div class="l">floating</div></div>
+    <div><div class="b" style="box-shadow:0 0 0 3px rgba(34,133,208,.25);border:1px solid var(--pe-primary);">focus</div><div class="l">focus ring</div></div>
+    <div><div class="b" style="box-shadow:0 0 0 3px rgba(248,51,60,.25);border:1px solid var(--red-100);">focus-err</div><div class="l">error ring</div></div>
+    <div><div class="b" style="opacity:.5">opacity 50</div><div class="l">--opacity-50</div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Opacity scale</h3>
+  <div class="grid">
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:.20">20</div><div class="l">opacity-20</div></div>
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:.40">40</div><div class="l">opacity-40</div></div>
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:.50">50</div><div class="l">opacity-50</div></div>
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:.70">70</div><div class="l">opacity-70</div></div>
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:.80">80</div><div class="l">opacity-80</div></div>
+    <div><div class="b" style="background:var(--pe-primary);color:#fff;border:0;opacity:1">100</div><div class="l">opacity-100</div></div>
+  </div>
+</section>
+
+</body></html>

@@ -1,0 +1,79 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Semantic &amp; UI palette</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:#fff;font-family:var(--font-sans);color:var(--ink);}
+  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey-100);margin:0 0 10px;}
+  section{margin-bottom:22px;}
+  .row{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+  .sw{border:1px solid var(--grey-20);border-radius:5px;overflow:hidden;background:#fff;}
+  .chip{height:54px;}
+  .meta{padding:7px 9px;font-size:10px;line-height:1.35;}
+  .meta b{display:block;font-weight:600;font-size:11px;color:var(--ink);}
+  .meta code{font-family:var(--font-mono);color:var(--grey-100);font-size:10px;}
+  .roles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+  .role{border:1px solid var(--grey-20);border-radius:5px;padding:12px;display:flex;gap:12px;align-items:center;}
+  .dot{width:32px;height:32px;border-radius:50%;flex:none;}
+  .role b{display:block;font-size:13px;color:var(--ink);font-weight:600;}
+  .role span{font-size:11px;color:var(--grey-100);display:block;margin-top:1px;}
+  .role code{font-family:var(--font-mono);font-size:10px;color:var(--grey-100);display:block;margin-top:3px;}
+</style></head><body>
+
+<section>
+  <h3>Status roles</h3>
+  <div class="roles">
+    <div class="role"><div class="dot" style="background:#4CAF50"></div><div><b>Success</b><span>Complete · Active</span><code>--status-success · #4CAF50</code></div></div>
+    <div class="role"><div class="dot" style="background:#F5B700"></div><div><b>Warning</b><span>Pending · Away</span><code>--status-warning · #F5B700</code></div></div>
+    <div class="role"><div class="dot" style="background:#F8333C"></div><div><b>Error</b><span>Failure · Alert</span><code>--status-error · #F8333C</code></div></div>
+    <div class="role"><div class="dot" style="background:#2285D0"></div><div><b>Info</b><span>Primary actions</span><code>--status-info · #2285D0</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Yellow ramp · warning</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#F5B700"></div><div class="meta"><b>Yellow 100</b><code>#F5B700</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F7C533"></div><div class="meta"><b>Yellow 80</b><code>#F7C533</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F9D466"></div><div class="meta"><b>Yellow 60</b><code>#F9D466</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FBE299"></div><div class="meta"><b>Yellow 40</b><code>#FBE299</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FDF1CC"></div><div class="meta"><b>Yellow 20</b><code>#FDF1CC</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FEF8E5"></div><div class="meta"><b>Yellow 10</b><code>#FEF8E5</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Red ramp · error / destructive</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#F8333C"></div><div class="meta"><b>Red 100</b><code>#F8333C</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F95C63"></div><div class="meta"><b>Red 80</b><code>#F95C63</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FB858A"></div><div class="meta"><b>Red 60</b><code>#FB858A</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FCADB1"></div><div class="meta"><b>Red 40</b><code>#FCADB1</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FED6D8"></div><div class="meta"><b>Red 20</b><code>#FED6D8</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FEEBEB"></div><div class="meta"><b>Red 10</b><code>#FEEBEB</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Main_UI · named accent palette</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#165585"></div><div class="meta"><b>Blue Sapphire</b><code>#165585</code></div></div>
+    <div class="sw"><div class="chip" style="background:#EBF6FF;border-bottom:1px solid var(--grey-20);"></div><div class="meta"><b>Alice Blue</b><code>#EBF6FF</code></div></div>
+    <div class="sw"><div class="chip" style="background:#317033"></div><div class="meta"><b>Mughal Green</b><code>#317033</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F1FFF2;border-bottom:1px solid var(--grey-20);"></div><div class="meta"><b>Honeydew</b><code>#F1FFF2</code></div></div>
+    <div class="sw"><div class="chip" style="background:#48525C"></div><div class="meta"><b>Independence</b><code>#48525C</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F9D773"></div><div class="meta"><b>Orange Yellow</b><code>#F9D773</code></div></div>
+    <div class="sw"><div class="chip" style="background:#873302"></div><div class="meta"><b>Smokey Topaz</b><code>#873302</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FAA675"></div><div class="meta"><b>Light Salmon</b><code>#FAA675</code></div></div>
+    <div class="sw"><div class="chip" style="background:#9E2127"></div><div class="meta"><b>Red Brown</b><code>#9E2127</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FB8F94"></div><div class="meta"><b>L. Salmon Pink</b><code>#FB8F94</code></div></div>
+    <div class="sw"><div class="chip" style="background:#78003F"></div><div class="meta"><b>Tyrian Purple</b><code>#78003F</code></div></div>
+    <div class="sw"><div class="chip" style="background:#DC0073"></div><div class="meta"><b>Red Purple</b><code>#DC0073</code></div></div>
+    <div class="sw"><div class="chip" style="background:#EB73B2"></div><div class="meta"><b>Cyclamen</b><code>#EB73B2</code></div></div>
+    <div class="sw"><div class="chip" style="background:#061436"></div><div class="meta"><b>Maastricht Blue</b><code>#061436</code></div></div>
+    <div class="sw"><div class="chip" style="background:#0A2463"></div><div class="meta"><b>Royal Blue</b><code>#0A2463</code></div></div>
+    <div class="sw"><div class="chip" style="background:#7987A9"></div><div class="meta"><b>Shadow Blue</b><code>#7987A9</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F4F8FB;border-bottom:1px solid var(--grey-20);"></div><div class="meta"><b>Background</b><code>#F4F8FB</code></div></div>
+    <div class="sw"><div class="chip" style="background:#80C3F8"></div><div class="meta"><b>Hover Button</b><code>#80C3F8</code></div></div>
+  </div>
+</section>
+
+</body></html>

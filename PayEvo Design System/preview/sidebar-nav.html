@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Nav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>body{margin:0;padding:20px;background:#F4F8FB;font-family:'Open Sans',sans-serif;display:flex;gap:14px;}
+  .side{width:220px;background:#fff;border:1px solid #E0E0E0;border-radius:5px;padding:6px;}
+  .item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:5px;font-size:14px;color:#444;cursor:pointer;}
+  .item .i{width:18px;height:18px;color:#7987A9;}
+  .item.active{background:#2285D0;color:#fff;}
+  .item.active .i{color:#fff;}
+  .item:hover:not(.active){background:#EBF6FF;}
+</style></head><body>
+<div class="side">
+  <div class="item"><i data-lucide="home" class="i"></i>Home</div>
+  <div class="item active"><i data-lucide="banknote" class="i"></i>Payroll</div>
+  <div class="item"><i data-lucide="layers" class="i"></i>Actions</div>
+  <div class="item"><i data-lucide="bar-chart-3" class="i"></i>Reports</div>
+  <div class="item"><i data-lucide="users" class="i"></i>Employees</div>
+  <div class="item"><i data-lucide="settings" class="i"></i>Settings</div>
+</div>
+<script>lucide.createIcons();</script>
+</body></html>

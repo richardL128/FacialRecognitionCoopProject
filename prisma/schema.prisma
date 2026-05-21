@@ -31,6 +31,9 @@ model Tenant {
   deletedAt DateTime? @map("deleted_at")
 
   users User[]
+  cameraCaptures CameraCapture[]
+  employeeProfiles EmployeeProfile[]
+  employeeFaceLibrary EmployeeFaceLibrary[]
 
   @@map("tenants")
 }
@@ -51,10 +54,64 @@ model User {
   dashboardLayout Json?     @map("dashboard_layout")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+  cameraCaptures CameraCapture[]
+  enrolledEmployeeFaces EmployeeFaceLibrary[]
 
   @@index([tenantId])
   @@index([externalId])
   @@map("users")
+}
+
+model CameraCapture {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  imageUrl  String   @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  employeeFaceLibrary EmployeeFaceLibrary[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("camera_captures")
+}
+
+model EmployeeProfile {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  firstName    String   @map("first_name")
+  name         String
+  email        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  faces        EmployeeFaceLibrary[]
+
+  @@index([tenantId])
+  @@map("employee_profiles")
+}
+
+model EmployeeFaceLibrary {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  employeeProfileId String   @map("employee_profile_id") @db.Uuid
+  captureId         String   @map("capture_id") @db.Uuid
+  createdBy         String   @map("created_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  employeeProfile   EmployeeProfile @relation(fields: [employeeProfileId], references: [id])
+  capture           CameraCapture   @relation(fields: [captureId], references: [id])
+  creator           User            @relation(fields: [createdBy], references: [id])
+
+  @@unique([employeeProfileId, captureId], name: "uq_employee_face_profile_capture")
+  @@index([tenantId])
+  @@index([employeeProfileId])
+  @@map("employee_face_library")
 }
 
 // ─── Audit Log ────────────────────────────────────────────────

@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body{margin:0;background:#222;color:#fff;font:11px monospace}
+  .wrap{position:relative;display:inline-block}
+  img{display:block;width:500px;height:auto}
+  .grid{position:absolute;inset:0;pointer-events:none}
+  .v,.h{position:absolute;background:rgba(255,0,255,.5)}
+  .v{top:0;bottom:0;width:1px}
+  .h{left:0;right:0;height:1px}
+  .lbl{position:absolute;font-size:9px;color:#0ff;background:#000;padding:1px 2px}
+</style></head>
+<body>
+<div class="wrap">
+  <img id="m" src="assets/logos/pe-logos-all.svg">
+  <div class="grid" id="g"></div>
+</div>
+<script>
+  // master is 2000x6865. Display width 500 -> scale 0.25
+  const SCALE = 0.25;
+  const W = 2000*SCALE;
+  const H = 6865*SCALE;
+  const g = document.getElementById('g');
+
+  // Vertical lines every 200 source-px
+  for (let x=0; x<=2000; x+=200) {
+    const v = document.createElement('div');
+    v.className='v'; v.style.left=(x*SCALE)+'px';
+    g.appendChild(v);
+    const l = document.createElement('div');
+    l.className='lbl'; l.style.left=(x*SCALE)+'px'; l.style.top='0';
+    l.textContent=x;
+    g.appendChild(l);
+  }
+  // Horizontal lines every 200 source-px
+  for (let y=0; y<=6865; y+=200) {
+    const h = document.createElement('div');
+    h.className='h'; h.style.top=(y*SCALE)+'px';
+    g.appendChild(h);
+    const l = document.createElement('div');
+    l.className='lbl'; l.style.top=(y*SCALE)+'px'; l.style.left='0';
+    l.textContent=y;
+    g.appendChild(l);
+  }
+</script>
+</body></html>

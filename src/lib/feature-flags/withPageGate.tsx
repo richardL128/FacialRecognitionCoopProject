@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import type { Route } from 'next';
 import { getSessionContext } from '@/lib/auth/session';
 import { featureFlags } from '@/lib/feature-flags';
 
@@ -15,7 +16,7 @@ import { featureFlags } from '@/lib/feature-flags';
  * Or with a custom redirect:
  *   export default withPageGate('module:feature-a', '/settings')(FeaturePage);
  */
-export function withPageGate(flagKey: string, redirectTo = '/dashboard') {
+export function withPageGate(flagKey: string, redirectTo: Route = '/dashboard') {
   return function gate<P extends object>(Component: React.ComponentType<P>): React.FC<P> {
     async function GatedPage(props: P) {
       const session = await getSessionContext();
