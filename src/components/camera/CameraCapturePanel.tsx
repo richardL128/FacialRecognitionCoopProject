@@ -716,6 +716,9 @@ export default function CameraCapturePanel() {
         ) : (
           <p className="pe-small mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
             Latest capture ID: {uploadedFileId || latestCaptureId}
+          </p>
+        )}
+
         {enrollMessage ? (
           <div className="mt-3 rounded-md border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-ice))] px-3 py-2 pe-small text-[rgb(var(--pe-grey-80))]">
             {enrollMessage}
