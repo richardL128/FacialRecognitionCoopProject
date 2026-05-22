@@ -96,7 +96,8 @@ export const POST = withApi(
 
     const name = parsed.data.name.trim();
     const email = parsed.data.email?.trim() || null;
-    const firstName = '';
+    // Extract firstName from the name (first word)
+    const firstName = name.split(/\s+/)[0] || '';
 
     const inserted = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       INSERT INTO employee_profiles (tenant_id, first_name, name, email)

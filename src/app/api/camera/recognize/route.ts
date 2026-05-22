@@ -73,7 +73,8 @@ export const POST = withApi(
         ORDER BY efl.created_at DESC
         LIMIT ${CANDIDATE_LIMIT}
       `);
-    } catch {
+    } catch (error) {
+      // Log database query error but continue with empty candidates
       captureCandidates = [];
     }
 

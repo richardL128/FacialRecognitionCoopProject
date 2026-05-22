@@ -235,26 +235,24 @@ export default function Header() {
             </span>
           </div>
 
-          {/* Right cluster */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden items-center gap-1 md:flex">
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--pe-grey-60))] transition hover:bg-[rgb(var(--pe-grey-10))] hover:text-[rgb(var(--pe-grey-100))]"
-                aria-label="Help"
-                title="Help"
-              >
-                <HelpIcon />
-              </button>
-              <button
-                type="button"
-                className="relative flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--pe-grey-60))] transition hover:bg-[rgb(var(--pe-grey-10))] hover:text-[rgb(var(--pe-grey-100))]"
-                aria-label="Notifications"
-                title="Notifications"
-              >
-                <BellIcon />
-              </button>
-            </div>
+          {/* Right cluster - spread icons to corners */}
+          <div className="flex items-center gap-8 sm:gap-12">
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--pe-grey-60))] transition hover:bg-[rgb(var(--pe-grey-10))] hover:text-[rgb(var(--pe-grey-100))]"
+              aria-label="Help"
+              title="Help"
+            >
+              <HelpIcon />
+            </button>
+            <button
+              type="button"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--pe-grey-60))] transition hover:bg-[rgb(var(--pe-grey-10))] hover:text-[rgb(var(--pe-grey-100))]"
+              aria-label="Notifications"
+              title="Notifications"
+            >
+              <BellIcon />
+            </button>
 
             <button
               type="button"

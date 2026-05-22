@@ -117,6 +117,8 @@ export default function CameraCapturePanel() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { enabled: cameraEnabled, loading: cameraFlagLoading } = useFeatureFlag(
     'CAMERA_CAPTURE_ENABLED',
@@ -217,7 +219,8 @@ export default function CameraCapturePanel() {
   }, []);
 
   const enrollLatestCapture = useCallback(async () => {
-    if (!latestCaptureId || !selectedEmployeeId) {
+    const captureIdToEnroll = uploadedFileId || latestCaptureId;
+    if (!captureIdToEnroll || !selectedEmployeeId) {
       return;
     }
 
@@ -229,7 +232,7 @@ export default function CameraCapturePanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: selectedEmployeeId,
-          captureId: latestCaptureId,
+          captureId: captureIdToEnroll,
         }),
       });
       const payload = (await response.json()) as EnrollmentResponse;
@@ -250,7 +253,55 @@ export default function CameraCapturePanel() {
     } finally {
       setEnrollLoading(false);
     }
-  }, [employeeResults, latestCaptureId, selectedEmployeeId]);
+  }, [employeeResults, latestCaptureId, uploadedFileId, selectedEmployeeId]);
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select an image file');
+      setState('error');
+      return;
+    }
+
+    setErrorMessage(null);
+    setState('uploading');
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/camera/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const payload = (await response.json()) as UploadResponse;
+
+      if (!response.ok || !payload.success || !payload.data) {
+        throw new Error(payload.error?.message ?? 'Upload failed');
+      }
+
+      setCaptureImageUrl(payload.data.imageUrl);
+      setUploadedFileId(payload.data.captureId);
+      setEnrollMessage(null);
+      setState('success');
+      await loadRecentCaptures();
+      
+      // Run recognition on the uploaded file
+      const imageBlob = await new Promise<Blob | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(file.slice(0, file.size, file.type) as Blob);
+        reader.onerror = () => resolve(null);
+        reader.readAsArrayBuffer(file);
+      });
+      
+      if (imageBlob) {
+        await runRecognition(imageBlob, payload.data.captureId);
+      }
+    } catch (error) {
+      setState('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
+    }
+  }, [loadRecentCaptures, runRecognition]);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -356,8 +407,12 @@ export default function CameraCapturePanel() {
     setErrorMessage(null);
     setRecognitionResult(null);
     setLatestCaptureId(null);
+    setUploadedFileId(null);
     setSelectedEmployeeId('');
     setEnrollMessage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   }, []);
 
   useEffect(() => {
@@ -369,8 +424,10 @@ export default function CameraCapturePanel() {
   useEffect(() => {
     if (!cameraFlagLoading && cameraEnabled) {
       loadRecentCaptures();
+      // Auto-start camera when component mounts
+      void startCamera();
     }
-  }, [cameraEnabled, cameraFlagLoading, loadRecentCaptures]);
+  }, [cameraEnabled, cameraFlagLoading, loadRecentCaptures, startCamera]);
 
   useEffect(() => {
     if (!cameraEnabled || cameraFlagLoading) {
@@ -487,15 +544,6 @@ export default function CameraCapturePanel() {
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={startCamera}
-          disabled={state === 'capturing' || state === 'uploading'}
-          className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-4 py-2 text-[rgb(var(--pe-grey-5))] transition-colors hover:bg-[rgb(var(--pe-blue-80))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:bg-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))] disabled:hover:bg-[rgb(var(--pe-grey-20))]"
-        >
-          Start Camera
-        </button>
-
-        <button
-          type="button"
           onClick={captureAndUpload}
           disabled={state !== 'capturing'}
           className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-transparent px-4 py-2 text-[rgb(var(--pe-blue-100))] transition-colors hover:bg-[rgb(var(--pe-blue-10))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))] disabled:hover:bg-transparent"
@@ -579,6 +627,40 @@ export default function CameraCapturePanel() {
 
       <section className="mt-6">
         <h2 className="pe-h5" style={{ color: 'rgb(var(--pe-grey-100))' }}>
+          Upload Photo From Device
+        </h2>
+
+        <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+          Upload a sanitized image from your device to add to the employee database.
+        </p>
+
+        <div className="mt-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              if (file) {
+                void handleFileUpload(file);
+              }
+            }}
+            className="hidden"
+            aria-label="Upload image file"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={state === 'uploading'}
+            className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-4 py-2 text-[rgb(var(--pe-grey-5))] transition-colors hover:bg-[rgb(var(--pe-blue-80))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:bg-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))]"
+          >
+            {state === 'uploading' ? 'Uploading...' : 'Choose Image'}
+          </button>
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="pe-h5" style={{ color: 'rgb(var(--pe-grey-100))' }}>
           Assign Capture To Employee
         </h2>
 
@@ -620,23 +702,20 @@ export default function CameraCapturePanel() {
           <button
             type="button"
             onClick={enrollLatestCapture}
-            disabled={!latestCaptureId || !selectedEmployeeId || enrollLoading}
-            className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-4 py-2 text-[rgb(var(--pe-grey-5))] transition-colors hover:bg-[rgb(var(--pe-blue-80))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:bg-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))]"
-          >
-            {enrollLoading ? 'Assigning...' : 'Assign Photo'}
-          </button>
+          disabled={!(uploadedFileId || latestCaptureId) || !selectedEmployeeId || enrollLoading}
+          className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-4 py-2 text-[rgb(var(--pe-grey-5))] transition-colors hover:bg-[rgb(var(--pe-blue-80))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:bg-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))]"
+        >
+          {enrollLoading ? 'Assigning...' : 'Assign Photo'}
+        </button>
         </div>
 
-        {!latestCaptureId ? (
+        {!uploadedFileId && !latestCaptureId ? (
           <p className="pe-small mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-            Capture and upload a photo first to enable assignment.
+            Capture or upload a photo first to enable assignment.
           </p>
         ) : (
           <p className="pe-small mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-            Latest capture ID: {latestCaptureId}
-          </p>
-        )}
-
+            Latest capture ID: {uploadedFileId || latestCaptureId}
         {enrollMessage ? (
           <div className="mt-3 rounded-md border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-ice))] px-3 py-2 pe-small text-[rgb(var(--pe-grey-80))]">
             {enrollMessage}
