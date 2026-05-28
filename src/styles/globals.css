@@ -2,3 +2,98 @@
 @import '@progress/kendo-theme-default/dist/all.css';
 @import './payevo-design-system.css';
 @import './payevo-kendo-theme.css';
+
+@font-face {
+  font-family: 'Open Sans';
+  src: url('/branding/fonts/OpenSans-Variable.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  src: url('/branding/fonts/OpenSans-Italic-Variable.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 300 800;
+  font-display: swap;
+}
+
+html[data-theme='payevo'] body,
+html[data-theme='payevo-dark'] body {
+  font-family: 'Open Sans', sans-serif;
+  color: rgb(var(--pe-grey-100));
+  background:
+    radial-gradient(circle at 8% 0%, rgb(var(--pe-blue-10)) 0%, transparent 36%),
+    radial-gradient(circle at 92% 100%, rgb(var(--pe-blue-20)) 0%, transparent 30%),
+    rgb(var(--pe-ice));
+}
+
+html[data-theme='payevo'] body::before,
+html[data-theme='payevo-dark'] body::before {
+  content: '';
+  position: fixed;
+  right: -84px;
+  bottom: -92px;
+  width: 290px;
+  height: 290px;
+  background: url('/branding/payevo-mark.svg') no-repeat center / contain;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-theme='payevo'] body > *,
+html[data-theme='payevo-dark'] body > * {
+  position: relative;
+  z-index: 1;
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-page-shell {
+  width: min(1500px, calc(100vw - 2rem));
+  margin-inline: auto;
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-surface {
+  background: rgb(var(--pe-primary));
+  border: 1px solid rgb(var(--pe-grey-20));
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--pe-shadow-standard);
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-hero-band {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    140deg,
+    rgb(var(--pe-blue-80)) 0%,
+    rgb(var(--pe-blue-80)) 48%,
+    rgb(var(--pe-blue-60)) 74%,
+    rgb(var(--pe-blue-100)) 100%
+  );
+  border-radius: 12px;
+  color: rgb(var(--pe-grey-5));
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-hero-band::after {
+  content: '';
+  position: absolute;
+  inset: -50% -10% auto auto;
+  width: 280px;
+  height: 280px;
+  background: url('/branding/payevo-mark.svg') no-repeat center / contain;
+  opacity: 0.14;
+  transform: rotate(-14deg);
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-logo-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  min-width: 110px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--pe-grey-20) / 0.95);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 2px 12px rgb(7 45 72 / 0.12);
+}

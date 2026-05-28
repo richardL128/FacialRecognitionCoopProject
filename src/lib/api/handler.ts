@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ZodSchema } from 'zod';
 import { getSessionContext, type SessionContext } from '@/lib/auth/session';
 import { AppError } from '@/lib/errors';
+import { classifyDatabaseError, isLikelyDatabaseError } from '@/lib/db/error-classifier';
+import { getDatabaseStartupConfigError } from '@/lib/db/prisma';
 import { featureFlags } from '@/lib/feature-flags';
 import { auditLog } from '@/lib/audit/logger';
 import { requestLogger } from '@/lib/logger';
@@ -10,6 +12,7 @@ import { apiError } from '@/types/api';
 type ApiContext = {
   session: SessionContext;
   params: Record<string, string>;
+  requestId: string;
 };
 
 type ApiHandler = (request: NextRequest, context: ApiContext) => Promise<NextResponse>;
@@ -36,8 +39,22 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
     request: NextRequest,
     routeContext: { params: Promise<Record<string, string>> },
   ) => {
+    const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
     const url = new URL(request.url);
     const params = await routeContext.params;
+
+    const databaseConfigError = getDatabaseStartupConfigError();
+    if (databaseConfigError) {
+      const response = NextResponse.json(
+        apiError('DATABASE_URL_INVALID', databaseConfigError, {
+          requestId,
+          context: `${request.method} ${url.pathname}`,
+        }),
+        { status: 500 },
+      );
+      response.headers.set('x-request-id', requestId);
+      return response;
+    }
 
     // 1. Auth — resolve session
     const session = await getSessionContext();
@@ -52,6 +69,7 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
       path: url.pathname,
       tenantId: session.tenantId,
       userId: session.userId,
+      requestId,
     });
 
     try {
@@ -103,19 +121,46 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
       }
 
       // 5. Execute handler (permissions + tenant check + DB + audit happen inside)
-      return await handler(request, { session, params });
+      const response = await handler(request, { session, params, requestId });
+      response.headers.set('x-request-id', requestId);
+      return response;
     } catch (error) {
       if (error instanceof AppError) {
         log.warn({ err: error }, error.message);
-        return NextResponse.json(apiError(error.code, error.message), {
+        const response = NextResponse.json(apiError(error.code, error.message, { requestId }), {
           status: error.statusCode,
         });
+        response.headers.set('x-request-id', requestId);
+        return response;
+      }
+
+      if (error instanceof Error) {
+        if (isLikelyDatabaseError(error)) {
+          const classified = classifyDatabaseError(error, `${request.method} ${url.pathname}`);
+          log.error({ err: error, classified }, 'Unhandled database error in API route');
+          const response = NextResponse.json(
+            apiError(classified.code, classified.message, {
+              requestId,
+              ...classified.details,
+            }),
+            {
+              status: classified.status,
+            },
+          );
+          response.headers.set('x-request-id', requestId);
+          return response;
+        }
       }
 
       log.error({ err: error }, 'Unhandled error in API route');
-      return NextResponse.json(apiError('INTERNAL_ERROR', 'Internal server error'), {
-        status: 500,
-      });
+      const response = NextResponse.json(
+        apiError('INTERNAL_ERROR', 'Internal server error', { requestId }),
+        {
+          status: 500,
+        },
+      );
+      response.headers.set('x-request-id', requestId);
+      return response;
     }
   };
 }

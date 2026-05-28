@@ -2,25 +2,20 @@
 
 import { TileLayout, type TileLayoutRepositionEvent } from '@progress/kendo-react-layout';
 import type { TileConfig, TileType } from '@/constants/dashboardLayouts';
-import OverviewTile from './tiles/OverviewTile';
 import RecentActivityTile from './tiles/RecentActivityTile';
-import StatsTile from './tiles/StatsTile';
-import QuickActionsTile from './tiles/QuickActionsTile';
-import AlertsTile from './tiles/AlertsTile';
-import PendingItemsTile from './tiles/PendingItemsTile';
 
 const TILE_COMPONENTS: Record<TileType, React.ComponentType> = {
-  overview: OverviewTile,
+  overview: RecentActivityTile,
   'recent-activity': RecentActivityTile,
-  stats: StatsTile,
-  'quick-actions': QuickActionsTile,
-  alerts: AlertsTile,
-  'pending-items': PendingItemsTile,
+  stats: RecentActivityTile,
+  'quick-actions': RecentActivityTile,
+  alerts: RecentActivityTile,
+  'pending-items': RecentActivityTile,
 };
 
 interface DashboardTileLayoutProps {
   tiles: TileConfig[];
-  onReposition: (tiles: TileConfig[]) => void;
+  onReposition?: (tiles: TileConfig[]) => void;
 }
 
 export default function DashboardTileLayout({ tiles, onReposition }: DashboardTileLayoutProps) {
@@ -37,6 +32,8 @@ export default function DashboardTileLayout({ tiles, onReposition }: DashboardTi
   });
 
   function handleReposition(e: TileLayoutRepositionEvent) {
+    if (!onReposition) return;
+
     const updated = tiles.map((tile, i) => {
       const val = e.value[i];
       if (!val) return tile;
@@ -54,10 +51,10 @@ export default function DashboardTileLayout({ tiles, onReposition }: DashboardTi
   return (
     <TileLayout
       columns={3}
-      rowHeight={180}
+      rowHeight={220}
       gap={{ rows: 16, columns: 16 }}
       items={items}
-      onReposition={handleReposition}
+      onReposition={onReposition ? handleReposition : undefined}
       autoFlow="row dense"
       className="dashboard-tiles"
     />

@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Type weights</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:#fff;font-family:var(--font-sans);color:var(--ink);}
+  .row{display:flex;gap:14px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--grey-20);}
+  .row:last-child{border:0;}
+  .label{width:140px;flex:none;font-family:var(--font-mono);font-size:11px;color:var(--grey-100);}
+  .s{font-family:var(--font-sans);font-size:24px;color:var(--ink);letter-spacing:-0.02em;}
+  .note{font-size:11px;color:var(--grey-100);margin-top:14px;line-height:1.5;}
+  .note code{font-family:var(--font-mono);}
+</style></head><body>
+<div class="row"><span class="label">fw-300 · Light</span><span class="s" style="font-weight:300">Open Sans Light</span></div>
+<div class="row"><span class="label">fw-400 · Regular</span><span class="s" style="font-weight:400">Open Sans Regular</span></div>
+<div class="row"><span class="label">fw-600 · Semibold</span><span class="s" style="font-weight:600">Open Sans Semibold</span></div>
+<div class="row"><span class="label">fw-700 · Bold</span><span class="s" style="font-weight:700">Open Sans Bold</span></div>
+<div class="row"><span class="label">italic · 400</span><span class="s" style="font-style:italic">Open Sans Italic</span></div>
+<div class="row"><span class="label">italic · 600</span><span class="s" style="font-style:italic;font-weight:600">Open Sans Semibold Italic</span></div>
+<p class="note">
+  Tokens define <b>only</b> these four weights — <code>300 / 400 / 600 / 700</code>. Avoid 500 and 800; they are not in the system.<br>
+  Two FontStyle tokens exist: <code>normal</code> and <code>italic</code>. LineHeight token is <code>normal</code> across the board.
+</p>
+</body></html>

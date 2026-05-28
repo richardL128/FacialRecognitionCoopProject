@@ -1,0 +1,127 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Hero header — component</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--c-background);font-family:var(--font-sans);color:var(--ink);}
+  .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey-100);margin:0 0 8px;}
+  .stack{display:flex;flex-direction:column;gap:24px;max-width:920px;}
+
+  /* ---------- HeroHeader component ---------- */
+  .hero-header{
+    background: linear-gradient(135deg, #061436 0%, #0A2463 55%, #165585 100%);
+    border-radius: 12px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    color: #FFFFFF;
+    position: relative;
+    overflow: hidden;
+    min-height: 96px;
+    box-sizing: border-box;
+  }
+  .hero-header::after{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      linear-gradient(120deg, transparent 62%, rgba(255,255,255,.05) 62% 67%, transparent 67%),
+      linear-gradient(160deg, transparent 72%, rgba(255,255,255,.04) 72% 82%, transparent 82%);
+    pointer-events:none;
+  }
+  .hero-header__title{
+    font-size: 28px;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: #FFFFFF;          /* on #061436 → 15.95:1 contrast (AAA ≥ 7:1) */
+    position: relative;
+    z-index: 1;
+  }
+  .hero-header__subtitle{
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #FFFFFF;
+    opacity: 0.92;            /* on #061436 ≈ 14.7:1 — still AAA */
+    position: relative;
+    z-index: 1;
+  }
+  .hero-header__logo{
+    height: 28px;
+    width: auto;
+    flex: none;
+    position: relative;
+    z-index: 1;
+    opacity: .95;
+  }
+
+  /* ---------- variants ---------- */
+  .hero-header--solid{
+    background: var(--c-maastricht-blue);
+  }
+  .hero-header--solid::after{ display:none; }
+
+  .hero-header--blue{
+    background: linear-gradient(135deg, #165585 0%, #2285D0 100%);
+  }
+
+  /* ---------- contrast badge ---------- */
+  .meta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--grey-100);font-family:var(--font-mono);margin-top:6px;}
+  .meta b{color:var(--ink);font-family:var(--font-sans);font-weight:600;font-size:11px;}
+  .ratio{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:#E8F8EC;color:#1B5E20;font-family:var(--font-sans);font-weight:600;font-size:11px;}
+  .ratio::before{content:"AAA";font-size:9px;background:#1B5E20;color:#fff;padding:1px 5px;border-radius:9999px;letter-spacing:.04em;}
+</style></head><body>
+
+<div class="stack">
+
+  <div>
+    <p class="label">Hero header · default (gradient)</p>
+    <div class="hero-header">
+      <div>
+        <h2 class="hero-header__title">Run Payroll</h2>
+        <p class="hero-header__subtitle">Pay your team in three guided steps.</p>
+      </div>
+      <img class="hero-header__logo" src="../assets/logos/payevo-wordmark-white.svg" alt="PayEvolution">
+    </div>
+    <div class="meta">
+      <span class="ratio">15.95 : 1</span>
+      <span><b>#FFFFFF</b> on <b>#061436</b> — title</span>
+      <span>WCAG AAA · normal &amp; large text</span>
+    </div>
+  </div>
+
+  <div>
+    <p class="label">Hero header · solid (Maastricht Blue)</p>
+    <div class="hero-header hero-header--solid">
+      <div>
+        <h2 class="hero-header__title">Cheques dashboard</h2>
+        <p class="hero-header__subtitle">Issue, void, and track every cheque from one place.</p>
+      </div>
+      <img class="hero-header__logo" src="../assets/logos/payevo-wordmark-white.svg" alt="PayEvolution">
+    </div>
+    <div class="meta">
+      <span class="ratio">15.95 : 1</span>
+      <span><b>#FFFFFF</b> on <b>#061436</b></span>
+    </div>
+  </div>
+
+  <div>
+    <p class="label">Hero header · blue (legacy guideline cover)</p>
+    <div class="hero-header hero-header--blue">
+      <div>
+        <h2 class="hero-header__title">Color Guidelines</h2>
+        <p class="hero-header__subtitle">Tokens, ramps, and how to apply them.</p>
+      </div>
+      <img class="hero-header__logo" src="../assets/logos/payevo-wordmark-white.svg" alt="PayEvolution">
+    </div>
+    <div class="meta">
+      <span class="ratio">7.71 : 1</span>
+      <span><b>#FFFFFF</b> on <b>#165585</b></span>
+      <span>WCAG AAA · normal text</span>
+    </div>
+  </div>
+
+</div>
+
+</body></html>

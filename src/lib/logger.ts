@@ -8,14 +8,7 @@ export const logger = pino({
     ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
     : {}),
   redact: {
-    paths: [
-      '*.password',
-      '*.token',
-      '*.secret',
-      '*.apiKey',
-      '*.accessToken',
-      '*.refreshToken',
-    ],
+    paths: ['*.password', '*.token', '*.secret', '*.apiKey', '*.accessToken', '*.refreshToken'],
     censor: '[REDACTED]',
   },
 });
@@ -26,6 +19,7 @@ export function requestLogger(meta: {
   path: string;
   tenantId?: string;
   userId?: string;
+  requestId?: string;
 }) {
   return logger.child(meta);
 }

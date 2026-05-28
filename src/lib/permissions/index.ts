@@ -49,22 +49,31 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'settings:users:remove',
     'settings:config:update',
     'settings:flags:manage',
+    'camera:capture:create',
+    'camera:capture:read',
+    'employee:database:read',
+    'employee:database:manage',
   ],
 
   MANAGER: [
     'settings:users:read',
     'resources:records:create',
     'resources:records:update',
+    'camera:capture:create',
+    'camera:capture:read',
+    'employee:database:read',
+    'employee:database:manage',
   ],
 
   USER: [
     'resources:records:read',
     'resources:records:create',
+    'camera:capture:create',
+    'camera:capture:read',
+    'employee:database:read',
   ],
 
-  VIEWER: [
-    'resources:records:read',
-  ],
+  VIEWER: ['resources:records:read'],
 };
 
 function getEffectivePermissions(role: Role): Set<Permission> {

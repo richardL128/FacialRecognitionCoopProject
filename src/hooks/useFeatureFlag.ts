@@ -31,6 +31,7 @@ function reducer(state: FlagState, action: FlagAction): FlagState {
 export function useFeatureFlag(key: string | null, defaultValue = true): FlagState {
   const [state, dispatch] = useReducer(reducer, { enabled: defaultValue, loading: !!key });
   const lastFetchedAt = useRef(0);
+  const lastKnownEnabled = useRef(defaultValue);
 
   useEffect(() => {
     if (!key) return;
@@ -41,14 +42,26 @@ export function useFeatureFlag(key: string | null, defaultValue = true): FlagSta
     async function check() {
       try {
         const res = await fetch(`/api/permissions/flags?key=${encodeURIComponent(key!)}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (!cancelled) {
+            dispatch({ type: 'resolved', enabled: lastKnownEnabled.current });
+          }
+          return;
+        }
         const json = await res.json();
         if (!cancelled && json.success) {
-          dispatch({ type: 'resolved', enabled: json.data.enabled });
+          const enabled = Boolean(json.data.enabled);
+          lastKnownEnabled.current = enabled;
+          dispatch({ type: 'resolved', enabled });
           lastFetchedAt.current = Date.now();
+        } else if (!cancelled) {
+          dispatch({ type: 'resolved', enabled: lastKnownEnabled.current });
         }
       } catch {
-        // Fail-open on error — keep current state
+        // Fail-open on error and clear loading state.
+        if (!cancelled) {
+          dispatch({ type: 'resolved', enabled: lastKnownEnabled.current });
+        }
       }
     }
 

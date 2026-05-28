@@ -1,0 +1,66 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Primary palette</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:#fff;font-family:var(--font-sans);color:var(--ink);}
+  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey-100);margin:0 0 10px;}
+  section{margin-bottom:22px;}
+  .row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .sw{display:flex;flex-direction:column;border:1px solid var(--grey-20);border-radius:5px;overflow:hidden;background:#fff;}
+  .chip{height:56px;}
+  .meta{padding:8px 10px;font-size:10px;line-height:1.35;}
+  .meta b{display:block;font-weight:600;font-size:11px;color:var(--ink);}
+  .meta code{font-family:var(--font-mono);color:var(--grey-100);font-size:10px;}
+  .pe-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px;}
+  .pe-row .sw .chip{height:72px;}
+  .swatch-yellow .chip{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.04) 0 6px,transparent 6px 12px);}
+</style></head><body>
+
+<section>
+  <h3>paymentEvolution · umbrella</h3>
+  <div class="pe-row">
+    <div class="sw"><div class="chip" style="background:#2285D0"></div><div class="meta"><b>pe-primary</b><code>#2285D0</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--grey-20);"></div><div class="meta"><b>pe-secondary</b><code>#FFFFFF</code></div></div>
+    <div class="sw swatch-yellow"><div class="chip" style="background:#FFF45F"></div><div class="meta"><b>pe-secondary-sid</b><code>#FFF45F</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Blue · primary brand ramp</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#2285D0"></div><div class="meta"><b>Blue 100</b><code>#2285D0</code></div></div>
+    <div class="sw"><div class="chip" style="background:#4E9DD9"></div><div class="meta"><b>Blue 80</b><code>#4E9DD9</code></div></div>
+    <div class="sw"><div class="chip" style="background:#7AB6E3"></div><div class="meta"><b>Blue 60</b><code>#7AB6E3</code></div></div>
+    <div class="sw"><div class="chip" style="background:#A7CEEC"></div><div class="meta"><b>Blue 40</b><code>#A7CEEC</code></div></div>
+    <div class="sw"><div class="chip" style="background:#D3E7F6"></div><div class="meta"><b>Blue 20</b><code>#D3E7F6</code></div></div>
+    <div class="sw"><div class="chip" style="background:#E9F3FA"></div><div class="meta"><b>Blue 10</b><code>#E9F3FA</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F4F9FD"></div><div class="meta"><b>Blue 5</b><code>#F4F9FD</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Green · cheques sub-brand &amp; success</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#4CAF50"></div><div class="meta"><b>Green 100</b><code>#4CAF50</code></div></div>
+    <div class="sw"><div class="chip" style="background:#70BF73"></div><div class="meta"><b>Green 80</b><code>#70BF73</code></div></div>
+    <div class="sw"><div class="chip" style="background:#94CF96"></div><div class="meta"><b>Green 60</b><code>#94CF96</code></div></div>
+    <div class="sw"><div class="chip" style="background:#B7DFB9"></div><div class="meta"><b>Green 40</b><code>#B7DFB9</code></div></div>
+    <div class="sw"><div class="chip" style="background:#DBEFDC"></div><div class="meta"><b>Green 20</b><code>#DBEFDC</code></div></div>
+    <div class="sw"><div class="chip" style="background:#EDF7ED"></div><div class="meta"><b>Green 10</b><code>#EDF7ED</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F6FBF6"></div><div class="meta"><b>Green 5</b><code>#F6FBF6</code></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Orange · partner sub-brand</h3>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#F75C03"></div><div class="meta"><b>Orange 100</b><code>#F75C03</code></div></div>
+    <div class="sw"><div class="chip" style="background:#F97D35"></div><div class="meta"><b>Orange 80</b><code>#F97D35</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FA9D68"></div><div class="meta"><b>Orange 60</b><code>#FA9D68</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FCBE9A"></div><div class="meta"><b>Orange 40</b><code>#FCBE9A</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FDDECD"></div><div class="meta"><b>Orange 20</b><code>#FDDECD</code></div></div>
+    <div class="sw"><div class="chip" style="background:#FEEFE6"></div><div class="meta"><b>Orange 10</b><code>#FEEFE6</code></div></div>
+    <div class="sw"><div class="chip" style="background:#fff;border-bottom:1px solid var(--grey-20);color:var(--grey-60);font-size:9px;display:flex;align-items:center;justify-content:center;">no 5%</div><div class="meta"><b>—</b><code>not in tokens</code></div></div>
+  </div>
+</section>
+
+</body></html>

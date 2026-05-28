@@ -19,7 +19,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // Add your own routes here as you build features:
 const KILL_SWITCHES: Record<string, string> = {
   '/feature-a': 'KILL_SWITCH_FEATURE_A',
-  '/feature-b': 'KILL_SWITCH_FEATURE_B',
 };
 
 export function middleware(request: NextRequest) {

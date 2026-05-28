@@ -31,6 +31,11 @@ model Tenant {
   deletedAt DateTime? @map("deleted_at")
 
   users User[]
+  cameraCaptures CameraCapture[]
+  employeeProfiles EmployeeProfile[]
+  employeeFaceLibrary EmployeeFaceLibrary[]
+  faceModelTrainingJobs FaceModelTrainingJob[]
+  faceModelVersions FaceModelVersion[]
 
   @@map("tenants")
 }
@@ -51,10 +56,109 @@ model User {
   dashboardLayout Json?     @map("dashboard_layout")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+  cameraCaptures CameraCapture[]
+  enrolledEmployeeFaces EmployeeFaceLibrary[]
+  requestedFaceModelTrainingJobs FaceModelTrainingJob[] @relation("FaceModelTrainingRequestedBy")
 
   @@index([tenantId])
   @@index([externalId])
   @@map("users")
+}
+
+model CameraCapture {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  imageUrl  String   @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  employeeFaceLibrary EmployeeFaceLibrary[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("camera_captures")
+}
+
+model EmployeeProfile {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  firstName    String   @map("first_name")
+  name         String
+  email        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  faces        EmployeeFaceLibrary[]
+
+  @@index([tenantId])
+  @@map("employee_profiles")
+}
+
+model EmployeeFaceLibrary {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  employeeProfileId String   @map("employee_profile_id") @db.Uuid
+  captureId         String   @map("capture_id") @db.Uuid
+  createdBy         String   @map("created_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  employeeProfile   EmployeeProfile @relation(fields: [employeeProfileId], references: [id])
+  capture           CameraCapture   @relation(fields: [captureId], references: [id])
+  creator           User            @relation(fields: [createdBy], references: [id])
+
+  @@unique([employeeProfileId, captureId], name: "uq_employee_face_profile_capture")
+  @@index([tenantId])
+  @@index([employeeProfileId])
+  @@map("employee_face_library")
+}
+
+model FaceModelTrainingJob {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  requestedBy      String?   @map("requested_by") @db.Uuid
+  status           String    @default("pending")
+  reason           String?
+  dataDir          String?   @map("data_dir")
+  outputDir        String?   @map("output_dir")
+  startedAt        DateTime? @map("started_at")
+  finishedAt       DateTime? @map("finished_at")
+  errorMessage     String?   @map("error_message")
+  metadata         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  requestedByUser  User?     @relation("FaceModelTrainingRequestedBy", fields: [requestedBy], references: [id])
+  modelVersions    FaceModelVersion[] @relation("FaceModelVersionSourceJob")
+
+  @@index([tenantId])
+  @@index([status, createdAt])
+  @@map("face_model_training_jobs")
+}
+
+model FaceModelVersion {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  sourceJobId       String?   @map("source_job_id") @db.Uuid
+  modelPath         String    @map("model_path")
+  checkpointPath    String?   @map("checkpoint_path")
+  dataDir           String    @map("data_dir")
+  datasetClassCount Int       @map("dataset_class_count")
+  datasetImageCount Int       @map("dataset_image_count")
+  trainEpochs       Int       @map("train_epochs")
+  valAccuracy       Float?    @map("val_accuracy")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  sourceJob         FaceModelTrainingJob? @relation("FaceModelVersionSourceJob", fields: [sourceJobId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@map("face_model_versions")
 }
 
 // ─── Audit Log ────────────────────────────────────────────────

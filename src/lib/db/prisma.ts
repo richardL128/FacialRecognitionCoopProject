@@ -1,6 +1,35 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@/generated/prisma/client';
 
+const FALLBACK_DATABASE_URL = 'postgresql://invalid:invalid@127.0.0.1:1/invalid';
+
+function getDatabaseConfigError(): string | null {
+  const value = process.env.DATABASE_URL?.trim();
+  if (!value) {
+    return 'DATABASE_URL is not configured. For npm dev, set DATABASE_URL in .env.local. For docker-compose, set DATABASE_URL in service environment.';
+  }
+
+  if (value.includes('postgresql://user:password@localhost:5432/app_dev')) {
+    return 'DATABASE_URL is using the placeholder value from .env.example. Replace it with a real connection string before starting the app.';
+  }
+
+  return null;
+}
+
+const databaseConfigError = getDatabaseConfigError();
+
+export function getDatabaseStartupConfigError(): string | null {
+  return databaseConfigError;
+}
+
+function getConnectionString(): string {
+  const value = process.env.DATABASE_URL?.trim();
+  if (!value || databaseConfigError) {
+    return FALLBACK_DATABASE_URL;
+  }
+  return value;
+}
+
 // Models that have a deletedAt column — extend as you add soft-delete models
 const SOFT_DELETE_MODELS = ['Tenant', 'User'] as const;
 type SoftDeleteModel = (typeof SOFT_DELETE_MODELS)[number];
@@ -10,7 +39,7 @@ function isSoftDeleteModel(model: string): model is SoftDeleteModel {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg({ connectionString: getConnectionString() });
   const base = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],

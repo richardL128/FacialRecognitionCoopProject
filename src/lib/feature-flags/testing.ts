@@ -7,7 +7,7 @@
  *
  *   const mock = createMockFeatureFlags({
  *     'module:feature-a': true,
- *     'module:feature-b': false,
+ *     'CAMERA_CAPTURE_ENABLED': true,
  *   });
  *
  *   // Override the real module in your test setup:

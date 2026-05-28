@@ -1,20 +1,61 @@
 services:
-  app:
+  face-recognizer:
+    build:
+      context: ./services/face-recognizer
+      dockerfile: Dockerfile
+    environment:
+      MODEL_PROVIDER: huggingface
+      HF_REPO_ID: biometric-ai-lab/Face_Recognition
+      INFERENCE_SCRIPT_URL: https://huggingface.co/biometric-ai-lab/Face_Recognition/resolve/main/inference.py
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - face-recognition-v2
+
+  migrate:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - '3000:3000'
+      target: builder
+    command: sh -c "npx prisma migrate deploy"
     environment:
       DATABASE_URL: postgresql://appuser:apppass@db:5432/app_dev
     depends_on:
       db:
         condition: service_healthy
+    restart: on-failure
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3000'
+      - '3010:3000'
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      DATABASE_URL: postgresql://appuser:apppass@db:5432/app_dev
+      DEV_BYPASS_AUTH: 'true'
+      FACE_RECOGNITION_PROVIDER: ${FACE_RECOGNITION_PROVIDER:-embedding}
+      FACE_RECOGNIZER_URL: ${FACE_RECOGNIZER_URL:-http://face-recognizer:8000}
+      FACE_RECOGNITION_CANDIDATE_LIMIT: ${FACE_RECOGNITION_CANDIDATE_LIMIT:-120}
+      FACE_RECOGNIZER_MIN_CONFIDENCE: ${FACE_RECOGNIZER_MIN_CONFIDENCE:-0.88}
+      FACE_RECOGNIZER_AMBIGUITY_MARGIN: ${FACE_RECOGNIZER_AMBIGUITY_MARGIN:-0.03}
+      FACE_RECOGNIZER_TIMEOUT_MS: ${FACE_RECOGNIZER_TIMEOUT_MS:-7000}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   db:
     image: postgres:17-alpine
     ports:
-      - '5433:5432'
+      - '${DB_HOST_PORT:-5433}:5432'
     environment:
       POSTGRES_USER: appuser
       POSTGRES_PASSWORD: apppass

@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Badges</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:20px;background:#fff;font-family:'Open Sans',sans-serif;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  .lbl{width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7987A9;font-weight:600;margin-bottom:4px;}
+  .badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;}
+  .b-success{background:#F1FFF2;color:#317033;}
+  .b-warn{background:#FFF7DD;color:#8C6700;}
+  .b-error{background:#FFE6E7;color:#9E2127;}
+  .b-info{background:#EBF6FF;color:#165585;}
+  .b-neutral{background:#EBEBEB;color:#48525C;}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+</style></head><body>
+<div class="lbl">Status pills</div>
+<div class="row">
+  <span class="badge b-success"><span class="dot" style="background:#4CAF50"></span>Active</span>
+  <span class="badge b-warn"><span class="dot" style="background:#F5B700"></span>Pending</span>
+  <span class="badge b-error"><span class="dot" style="background:#F8333C"></span>Failed</span>
+  <span class="badge b-info"><span class="dot" style="background:#2285D0"></span>In Progress</span>
+  <span class="badge b-neutral">Draft</span>
+</div>
+</body></html>

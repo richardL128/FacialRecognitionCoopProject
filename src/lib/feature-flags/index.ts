@@ -14,7 +14,7 @@
  *
  * Usage in client components:
  *   const { enabled } = useFeatureFlag('module:feature-a');
- *   const { flags } = useFeatureFlags(['module:feature-a', 'module:feature-b']);
+ *   const { flags } = useFeatureFlags(['module:feature-a', 'CAMERA_CAPTURE_ENABLED']);
  */
 
 export { isEnabled, clearCache, getCacheStats } from './service';

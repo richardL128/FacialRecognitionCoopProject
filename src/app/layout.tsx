@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'Your App Name',
-  description: 'Your app description',
+  title: 'PayEvo Platform',
+  description: 'PayEvo operations dashboard and feature management platform.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

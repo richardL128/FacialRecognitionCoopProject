@@ -13,7 +13,12 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx db/seeds/index.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "dataset:export": "tsx scripts/export-employee-training-dataset.ts",
+    "train:model": "python Face_Recognition/finetune.py --data_dir ./dataset --output_dir ./checkpoints --epochs 50 --batch_size 64 --lr_backbone 8e-6 --lr_head 8e-5",
+    "train:model:from-db-photos": "npm run dataset:export && npm run train:model",
+    "train:model:worker": "tsx scripts/process-face-training-jobs.ts",
+    "train:model:worker:once": "tsx scripts/process-face-training-jobs.ts --once"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
@@ -56,6 +61,7 @@
     "prisma": "^7.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "zod": "^4.3.6"

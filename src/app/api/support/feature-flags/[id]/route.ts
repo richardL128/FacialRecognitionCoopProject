@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { withApi } from '@/lib/api/handler';
 import { prisma } from '@/lib/db/prisma';
 import { apiSuccess, apiError } from '@/types/api';
 import { auditLog } from '@/lib/audit/logger';
 import { featureFlags } from '@/lib/feature-flags';
+
+const paramsSchema = z.object({ id: z.string().uuid() });
 
 /**
  * DELETE /api/support/feature-flags/[id]
@@ -18,7 +21,12 @@ export const DELETE = withApi(async (request: NextRequest, { session, params }) 
     });
   }
 
-  const { id } = params;
+  const parsedParams = paramsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return NextResponse.json(apiError('VALIDATION_ERROR', 'Invalid override id'), { status: 400 });
+  }
+
+  const { id } = parsedParams.data;
 
   const override = await prisma.featureFlagOverride.findUnique({
     where: { id },

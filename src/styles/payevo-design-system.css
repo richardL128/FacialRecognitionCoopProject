@@ -41,13 +41,13 @@
   --pe-grey-100: 17 24 39;
 
   /* Blue */
-  --pe-blue-5: 244 249 253;   /* #F4F9FD */
-  --pe-blue-10: 235 246 255;  /* #EBF6FF */
-  --pe-blue-20: 211 231 246;  /* #D3E7F6 */
-  --pe-blue-40: 167 206 236;  /* #A7CEEC */
-  --pe-blue-60: 122 182 227;  /* #7AB6E3 */
-  --pe-blue-80: 22 85 133;    /* #165585 */
-  --pe-blue-100: 34 133 208;  /* #2285D0 */
+  --pe-blue-5: 244 249 253; /* #F4F9FD */
+  --pe-blue-10: 235 246 255; /* #EBF6FF */
+  --pe-blue-20: 211 231 246; /* #D3E7F6 */
+  --pe-blue-40: 167 206 236; /* #A7CEEC */
+  --pe-blue-60: 122 182 227; /* #7AB6E3 */
+  --pe-blue-80: 22 85 133; /* #165585 */
+  --pe-blue-100: 34 133 208; /* #2285D0 */
 
   /* Green */
   --pe-green-10: 236 253 245;
@@ -91,13 +91,13 @@
   --pe-grey-100: 243 244 246;
 
   /* Blue */
-  --pe-blue-5: 6 20 54;       /* #061436 */
-  --pe-blue-10: 10 37 99;     /* #0A2463 */
-  --pe-blue-20: 244 249 253;  /* #F4F9FD */
-  --pe-blue-40: 211 231 246;  /* #D3E7F6 */
-  --pe-blue-60: 167 206 236;  /* #A7CEEC */
-  --pe-blue-80: 122 182 227;  /* #7AB6E3 */
-  --pe-blue-100: 34 133 208;  /* #2285D0 */
+  --pe-blue-5: 6 20 54; /* #061436 */
+  --pe-blue-10: 10 37 99; /* #0A2463 */
+  --pe-blue-20: 244 249 253; /* #F4F9FD */
+  --pe-blue-40: 211 231 246; /* #D3E7F6 */
+  --pe-blue-60: 167 206 236; /* #A7CEEC */
+  --pe-blue-80: 122 182 227; /* #7AB6E3 */
+  --pe-blue-100: 34 133 208; /* #2285D0 */
 
   /* Green */
   --pe-green-10: 20 83 45;
@@ -209,9 +209,12 @@ html[data-theme='payevo'] .pe-topnav-bar * {
 /* Avatar text must stay light (on a coloured avatar circle).
    Selector is more specific than the wildcard above — no !important needed. */
 html:is([data-theme='payevo'], [data-theme='payevo-dark'], [data-theme='dark'])
-  .pe-topnav-bar .pe-topnav-avatar,
+  .pe-topnav-bar
+  .pe-topnav-avatar,
 html:is([data-theme='payevo'], [data-theme='payevo-dark'], [data-theme='dark'])
-  .pe-topnav-bar .pe-topnav-avatar * {
+  .pe-topnav-bar
+  .pe-topnav-avatar
+  * {
   color: rgb(var(--pe-grey-5));
 }
 
@@ -232,12 +235,38 @@ html[data-theme='payevo'][data-theme='payevo'] .pe-topnav .pe-subnav {
   color: rgb(var(--pe-grey-5));
 }
 
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-topnav-avatar--brand {
+  background: rgb(var(--pe-blue-100));
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav--brand-gradient {
+  background: linear-gradient(
+    135deg,
+    rgb(var(--pe-blue-80)) 0%,
+    rgb(var(--pe-blue-80)) 30%,
+    rgb(var(--pe-blue-60)) 60%,
+    rgb(var(--pe-blue-100)) 100%
+  );
+}
+
 html[data-theme='payevo'] .pe-subnav *:not(.pe-nav-panel *) {
   color: rgb(var(--pe-grey-5));
 }
 
 html[data-theme='payevo'] .pe-subnav a:not(.pe-nav-panel *):hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav .pe-subnav-dropdown {
+  border: 1px solid rgb(var(--pe-grey-20));
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--pe-shadow-overlay);
+  overflow: hidden;
+}
+
+html:is([data-theme='payevo'], [data-theme='payevo-dark']) .pe-subnav .pe-subnav-dropdown__item {
+  display: block;
+  padding: 8px 16px;
 }
 
 /* Active nav link in sub-nav: frosted highlight */
@@ -336,6 +365,10 @@ html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel {
 
 html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel [class*='border-b'],
 html[data-theme='payevo-dark'] .pe-topnav .pe-nav-panel [class*='border-t'] {
+  border-color: rgb(var(--pe-grey-40));
+}
+
+html[data-theme='payevo-dark'] .pe-subnav .pe-subnav-dropdown {
   border-color: rgb(var(--pe-grey-40));
 }
 
