@@ -10,10 +10,26 @@ build/
 
 # Environment files — NEVER commit these
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+.envrc
+.envrc.*
+!.env.example
+!.env*.example
+!.env.template
+!.env*.template
+
+# Secrets and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+*.secret
+secrets.*
+credentials.*
 
 # Database
 *.sqlite
