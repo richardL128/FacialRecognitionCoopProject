@@ -55,5 +55,9 @@ coverage/
 # Vercel
 .vercel/
 
+# Photo/image data generated locally
+uploads/camera-captures/
+dataset/
+
 /src/generated/prisma
 node_modules
