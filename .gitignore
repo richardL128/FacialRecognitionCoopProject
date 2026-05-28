@@ -13,8 +13,6 @@ build/
 .env.*
 .envrc
 .envrc.*
-!.env.example
-!.env*.example
 !.env.template
 !.env*.template
 
@@ -58,3 +56,4 @@ coverage/
 .vercel/
 
 /src/generated/prisma
+node_modules
