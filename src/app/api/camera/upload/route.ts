@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withApi } from '@/lib/api/handler';
 import { auditLog } from '@/lib/audit/logger';
 import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 import { canUser } from '@/lib/permissions';
 import { sanitizeImageUpload } from '@/lib/camera/sanitize';
 import { buildCaptureImageUrl, writeCaptureImage } from '@/lib/camera/storage';
@@ -67,22 +68,29 @@ export const POST = withApi(
     });
 
     const captureLimit = 10;
-    const oldest = await prisma.cameraCapture.findMany({
-      where: {
-        tenantId: session.tenantId,
-        employeeFaceLibrary: {
-          none: {},
+    try {
+      const oldest = await prisma.cameraCapture.findMany({
+        where: {
+          tenantId: session.tenantId,
+          employeeFaceLibrary: {
+            none: {},
+          },
         },
-      },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      skip: captureLimit,
-      select: { id: true },
-    });
-
-    if (oldest.length > 0) {
-      await prisma.cameraCapture.deleteMany({
-        where: { id: { in: oldest.map((c) => c.id) } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: captureLimit,
+        select: { id: true },
       });
+
+      if (oldest.length > 0) {
+        await prisma.cameraCapture.deleteMany({
+          where: { id: { in: oldest.map((c) => c.id) } },
+        });
+      }
+    } catch (error) {
+      logger.warn(
+        { err: error, tenantId: session.tenantId },
+        'Failed to prune old camera captures after upload',
+      );
     }
 
     await auditLog({

@@ -9,8 +9,6 @@ type CliOptions = {
   tenantId?: string;
 };
 
-type CaptureKey = `${string}/${string}`;
-
 const CAMERA_UPLOAD_ROOT = path.join(process.cwd(), 'uploads', 'camera-captures');
 
 function parseArgs(argv: string[]): CliOptions {
@@ -79,7 +77,7 @@ async function run(): Promise<void> {
       },
     });
 
-    const activeCaptureKeys = new Set<CaptureKey>(
+    const activeCaptureKeys = new Set(
       activeCaptures.map((capture) => `${capture.tenantId}/${capture.id}`),
     );
 
@@ -104,7 +102,7 @@ async function run(): Promise<void> {
         scannedFiles += 1;
 
         const captureId = captureIdFromFileName(fileName);
-        const captureKey = `${tenantId}/${captureId}` as CaptureKey;
+        const captureKey = `${tenantId}/${captureId}`;
 
         if (activeCaptureKeys.has(captureKey)) {
           continue;

@@ -127,7 +127,15 @@ async function buildEmbeddingRecognition(
     };
   }
 
-  const sorted = [...matches].sort((a, b) => b.confidence - a.confidence);
+  const bestMatchByEmployee = new Map<string, (typeof matches)[number]>();
+  for (const match of matches) {
+    const existing = bestMatchByEmployee.get(match.candidate.userId);
+    if (!existing || match.confidence > existing.confidence) {
+      bestMatchByEmployee.set(match.candidate.userId, match);
+    }
+  }
+
+  const sorted = [...bestMatchByEmployee.values()].sort((a, b) => b.confidence - a.confidence);
   const best = sorted[0] ?? null;
   const secondBest = sorted[1] ?? null;
   const isAboveThreshold = !!best && best.confidence >= MIN_CONFIDENCE_EMBEDDING;
