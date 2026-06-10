@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
+import CameraCapturePanel from '@/components/camera/CameraCapturePanel';
 
 function CameraCapturePage() {
-  redirect('/dashboard');
+  return <CameraCapturePanel />;
 }
 
 export default CameraCapturePage;
