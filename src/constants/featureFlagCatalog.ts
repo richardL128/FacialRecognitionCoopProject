@@ -134,6 +134,16 @@ export const FEATURE_FLAG_CATALOG: FeatureFlagMeta[] = [
     personas: ['admin', 'manager', 'user'],
   },
   {
+    key: 'cap:face-recognition-centroid-pipeline',
+    label: 'Centroid-First Face Recognition',
+    description:
+      'Use centroid vectors (Stage A) + per-employee embedding rerank (Stage B) for faster recognition. ' +
+      'Falls back to the legacy linear pipeline when disabled.',
+    category: 'capability',
+    allowedScopes: ['global', 'tenant'],
+    personas: ['admin'],
+  },
+  {
     key: 'cap:custom-fields',
     label: 'Custom Fields',
     description: 'User-defined fields on entity records',

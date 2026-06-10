@@ -36,6 +36,9 @@ model Tenant {
   employeeFaceLibrary EmployeeFaceLibrary[]
   faceModelTrainingJobs FaceModelTrainingJob[]
   faceModelVersions FaceModelVersion[]
+  faceEmbeddings FaceEmbedding[]
+  faceEmbeddingJobs FaceEmbeddingJob[]
+  faceEmployeeCentroids FaceEmployeeCentroid[]
 
   @@map("tenants")
 }
@@ -59,6 +62,7 @@ model User {
   cameraCaptures CameraCapture[]
   enrolledEmployeeFaces EmployeeFaceLibrary[]
   requestedFaceModelTrainingJobs FaceModelTrainingJob[] @relation("FaceModelTrainingRequestedBy")
+  requestedFaceEmbeddingJobs FaceEmbeddingJob[] @relation("FaceEmbeddingRequestedBy")
 
   @@index([tenantId])
   @@index([externalId])
@@ -68,13 +72,21 @@ model User {
 model CameraCapture {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId  String   @map("tenant_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  imageUrl  String   @map("image_url")
-  createdAt DateTime @default(now()) @map("created_at")
+  userId                 String    @map("user_id") @db.Uuid
+  imageUrl               String    @map("image_url")
+  source                 String    @default("dashboard") @map("source")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  recognitionStatus      String?   @map("recognition_status")
+  recognizedEmployeeId   String?   @map("recognized_employee_id") @db.Uuid
+  recognitionConfidence  Float?    @map("recognition_confidence")
+  recognizedAt           DateTime? @map("recognized_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  tenant             Tenant           @relation(fields: [tenantId], references: [id])
+  user               User             @relation(fields: [userId], references: [id])
+  recognizedEmployee EmployeeProfile? @relation("RecognizedCaptures", fields: [recognizedEmployeeId], references: [id])
   employeeFaceLibrary EmployeeFaceLibrary[]
+  faceEmbeddings FaceEmbedding[]
+  faceEmbeddingJobs FaceEmbeddingJob[]
 
   @@index([tenantId])
   @@index([userId])
@@ -87,12 +99,17 @@ model EmployeeProfile {
   firstName    String   @map("first_name")
   name         String
   email        String?
+  pinCode      String?  @map("pin_code")
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   tenant       Tenant               @relation(fields: [tenantId], references: [id])
   faces        EmployeeFaceLibrary[]
+  faceEmbeddings FaceEmbedding[]
+  faceEmbeddingJobs FaceEmbeddingJob[]
+  faceEmployeeCentroids FaceEmployeeCentroid[]
+  recognizedCaptures CameraCapture[]  @relation("RecognizedCaptures")
 
   @@index([tenantId])
   @@map("employee_profiles")
@@ -156,9 +173,82 @@ model FaceModelVersion {
 
   tenant            Tenant    @relation(fields: [tenantId], references: [id])
   sourceJob         FaceModelTrainingJob? @relation("FaceModelVersionSourceJob", fields: [sourceJobId], references: [id])
+  faceEmbeddings    FaceEmbedding[]
 
   @@index([tenantId, createdAt])
   @@map("face_model_versions")
+}
+
+model FaceEmbedding {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  employeeProfileId String    @map("employee_profile_id") @db.Uuid
+  captureId         String    @map("capture_id") @db.Uuid
+  modelVersionId    String?   @map("model_version_id") @db.Uuid
+  modelKey          String    @map("model_key")
+  embeddingDim      Int       @map("embedding_dim")
+  embedding         Json
+  // embedding_vec is the pgvector column. Populated on write; backfilled at startup for legacy rows.
+  embeddingVec      Unsupported("vector(512)")?  @map("embedding_vec")
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  employeeProfile   EmployeeProfile @relation(fields: [employeeProfileId], references: [id])
+  capture           CameraCapture   @relation(fields: [captureId], references: [id])
+  modelVersion      FaceModelVersion? @relation(fields: [modelVersionId], references: [id])
+
+  @@unique([captureId, modelKey], name: "uq_face_embedding_capture_model")
+  @@index([tenantId, active])
+  @@index([tenantId, employeeProfileId])
+  @@index([tenantId, modelKey, active])
+  @@map("face_embeddings")
+}
+
+model FaceEmployeeCentroid {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  employeeProfileId String   @map("employee_profile_id") @db.Uuid
+  modelKey          String   @map("model_key")
+  // centroid_vec: L2-normalised mean of all active embedding_vec for this employee + model.
+  centroidVec       Unsupported("vector(512)")  @map("centroid_vec")
+  sampleCount       Int      @default(0) @map("sample_count")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  employeeProfile   EmployeeProfile @relation(fields: [employeeProfileId], references: [id])
+
+  @@unique([tenantId, employeeProfileId, modelKey], name: "uq_face_employee_centroid")
+  @@index([tenantId, modelKey])
+  @@map("face_employee_centroids")
+}
+
+model FaceEmbeddingJob {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  employeeProfileId String    @map("employee_profile_id") @db.Uuid
+  captureId         String    @map("capture_id") @db.Uuid
+  requestedBy       String?   @map("requested_by") @db.Uuid
+  modelKey          String    @map("model_key")
+  status            String    @default("pending")
+  reason            String?
+  errorMessage      String?   @map("error_message")
+  startedAt         DateTime? @map("started_at")
+  finishedAt        DateTime? @map("finished_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  employeeProfile   EmployeeProfile @relation(fields: [employeeProfileId], references: [id])
+  capture           CameraCapture   @relation(fields: [captureId], references: [id])
+  requestedByUser   User?           @relation("FaceEmbeddingRequestedBy", fields: [requestedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([status, createdAt])
+  @@index([tenantId, modelKey, status])
+  @@map("face_embedding_jobs")
 }
 
 // ─── Audit Log ────────────────────────────────────────────────

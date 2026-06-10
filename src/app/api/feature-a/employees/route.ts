@@ -24,6 +24,7 @@ type EmployeeRow = {
   active: boolean;
   createdAt: Date;
   photoCount: bigint;
+  hasPin: boolean;
 };
 
 export const GET = withApi(
@@ -56,7 +57,8 @@ export const GET = withApi(
           ep.email,
           ep.active,
           ep.created_at AS "createdAt",
-          COUNT(efl.id) AS "photoCount"
+          COUNT(efl.id) AS "photoCount",
+          (ep.pin_code IS NOT NULL AND length(ep.pin_code) > 0) AS "hasPin"
         FROM employee_profiles ep
         LEFT JOIN employee_face_library efl ON efl.employee_profile_id = ep.id
         WHERE ep.tenant_id = ${session.tenantId}::uuid
@@ -66,7 +68,7 @@ export const GET = withApi(
             OR ep.name ILIKE ${likePattern}
             OR COALESCE(ep.email, '') ILIKE ${likePattern}
           )
-        GROUP BY ep.id, ep.first_name, ep.name, ep.email, ep.active, ep.created_at
+        GROUP BY ep.id, ep.first_name, ep.name, ep.email, ep.active, ep.created_at, ep.pin_code
         ORDER BY ep.created_at DESC
         LIMIT ${limit}
       `);
@@ -95,6 +97,7 @@ export const GET = withApi(
           active: row.active,
           createdAt: row.createdAt,
           photoCount: Number(row.photoCount),
+          hasPin: Boolean(row.hasPin),
         })),
       }),
       { status: 200 },

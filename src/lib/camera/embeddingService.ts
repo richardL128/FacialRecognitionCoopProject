@@ -53,9 +53,30 @@ export async function getFaceEmbedding(buffer: Buffer, mimeType = 'image/jpeg'):
   }
 }
 
+export function normalizeEmbeddingVector(values: number[]): number[] {
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new Error('Embedding vector is empty');
+  }
+
+  let sum = 0;
+  for (const value of values) {
+    if (!Number.isFinite(value)) {
+      throw new Error('Embedding vector contains non-finite values');
+    }
+    sum += value * value;
+  }
+
+  const norm = Math.sqrt(sum);
+  if (!Number.isFinite(norm) || norm <= 0) {
+    throw new Error('Embedding vector norm is invalid');
+  }
+
+  return values.map((value) => value / norm);
+}
+
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length === 0 || b.length === 0 || a.length !== b.length) {
-    return -1;
+    return Number.NaN;
   }
 
   let dot = 0;
@@ -71,7 +92,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   if (normA === 0 || normB === 0) {
-    return -1;
+    return Number.NaN;
   }
 
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));

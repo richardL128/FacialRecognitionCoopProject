@@ -225,10 +225,15 @@ function EmployeePhotoAccessPage() {
 
     const payload = (await response.json()) as {
       success: boolean;
-      error?: { message: string };
+      error?: { code?: string; message: string };
     };
 
     if (!response.ok || !payload.success) {
+      if (payload.error?.code === 'NO_FACE_DETECTED') {
+        throw new Error(
+          'Photo not linked. Please take a photo with a clear human face and try again.',
+        );
+      }
       throw new Error(payload.error?.message ?? 'Unable to link photo to employee');
     }
   }
@@ -242,6 +247,7 @@ function EmployeePhotoAccessPage() {
       const formData = new FormData();
       const file = new File([blob], `employee-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
       formData.append('image', file);
+      formData.append('source', 'employee_database');
 
       const response = await fetch('/api/camera/upload', {
         method: 'POST',

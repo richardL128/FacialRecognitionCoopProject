@@ -35,8 +35,8 @@ export async function GET() {
 
     const relationRows = await prisma.$queryRaw<RelationCheckRow[]>(Prisma.sql`
       SELECT
-        to_regclass('public.employee_profiles') AS "employeeProfiles",
-        to_regclass('public.employee_face_library') AS "employeeFaceLibrary"
+        to_regclass('public.employee_profiles')::text AS "employeeProfiles",
+        to_regclass('public.employee_face_library')::text AS "employeeFaceLibrary"
     `);
 
     const relationInfo = relationRows[0] ?? {

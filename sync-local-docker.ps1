@@ -5,7 +5,6 @@ param(
   [switch]$NoCache,
   [switch]$SkipSeed,
   [switch]$ResetDb,
-  [switch]$UseMigrateDev,
   [switch]$StartLocalNpm
 )
 
@@ -230,31 +229,16 @@ Write-Step "Starting database container"
 $env:DB_HOST_PORT = "$DbPort"
 Invoke-Checked -Command "docker" -CommandArgs @("compose", "up", "-d", "db")
 
-if ($UseMigrateDev) {
-  Write-Step "Applying migrations with migrate dev"
-  try {
+Write-Step "Applying migrations with migrate deploy"
+try {
+  Invoke-Checked -Command "npm" -CommandArgs @("run", "db:migrate")
+} catch {
+  if ($ResetDb) {
+    Write-Host "Migration failed. ResetDb enabled: resetting local development database..." -ForegroundColor Yellow
+    Invoke-Checked -Command "npx" -CommandArgs @("prisma", "migrate", "reset", "--force")
     Invoke-Checked -Command "npm" -CommandArgs @("run", "db:migrate")
-  } catch {
-    if ($ResetDb) {
-      Write-Host "Migration failed. ResetDb enabled: resetting local development database..." -ForegroundColor Yellow
-      Invoke-Checked -Command "npx" -CommandArgs @("prisma", "migrate", "reset", "--force")
-      Invoke-Checked -Command "npm" -CommandArgs @("run", "db:migrate")
-    } else {
-      throw "migrate dev failed (often drift/interactivity). Re-run with -UseMigrateDev -ResetDb, or use default db:push mode. Original error: $($_.Exception.Message)"
-    }
-  }
-} else {
-  Write-Step "Syncing schema with db:push (non-interactive)"
-  try {
-    Invoke-Checked -Command "npm" -CommandArgs @("run", "db:push")
-  } catch {
-    if ($ResetDb) {
-      Write-Host "db:push failed. ResetDb enabled: resetting local development database..." -ForegroundColor Yellow
-      Invoke-Checked -Command "npx" -CommandArgs @("prisma", "migrate", "reset", "--force")
-      Invoke-Checked -Command "npm" -CommandArgs @("run", "db:push")
-    } else {
-      throw "db:push failed. Re-run with -ResetDb, or use -UseMigrateDev if you specifically need migration generation. Original error: $($_.Exception.Message)"
-    }
+  } else {
+    throw "migrate deploy failed. Re-run with -ResetDb if the local database needs reset. Original error: $($_.Exception.Message)"
   }
 }
 

@@ -3,14 +3,19 @@ import { z } from 'zod';
 import { Prisma } from '@/generated/prisma/client';
 import { withApi } from '@/lib/api/handler';
 import { auditLog } from '@/lib/audit/logger';
+import { enqueueEmployeeFaceEmbeddingJob } from '@/lib/camera/embeddingJobs';
 import { enqueueTenantTrainingJob } from '@/lib/camera/trainingJobs';
 import { syncEmployeeCaptureToTrainingDataset } from '@/lib/camera/trainingDataset';
+import { getFaceEmbedding } from '@/lib/camera/embeddingService';
+import { readCaptureImage } from '@/lib/camera/storage';
 import { classifyDatabaseError } from '@/lib/db/error-classifier';
 import { prisma } from '@/lib/db/prisma';
 import { canUser } from '@/lib/permissions';
 import { apiError, apiSuccess } from '@/types/api';
 
 export const runtime = 'nodejs';
+
+const MIN_PHOTOS_FOR_RECOGNITION = 3;
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -155,6 +160,26 @@ export const POST = withApi(
       return NextResponse.json(apiError('NOT_FOUND', 'Capture not found'), { status: 404 });
     }
 
+    // Validate that the capture contains a human face before enrolling
+    try {
+      const imageBuffer = await readCaptureImage(session.tenantId, captureId);
+      await getFaceEmbedding(imageBuffer);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const isNoFace =
+        message.toLowerCase().includes('no face') ||
+        message.toLowerCase().includes('face detected');
+      return NextResponse.json(
+        apiError(
+          'NO_FACE_DETECTED',
+          isNoFace
+            ? 'No human face detected in this photo. Please use a clear photo showing a face.'
+            : 'Face validation service is unavailable. Please try again later.',
+        ),
+        { status: 422 },
+      );
+    }
+
     try {
       const enrolled = await prisma.employeeFaceLibrary.create({
         data: {
@@ -196,6 +221,23 @@ export const POST = withApi(
       }
 
       try {
+        await enqueueEmployeeFaceEmbeddingJob(
+          session.tenantId,
+          employee.id,
+          captureId,
+          session.userId,
+          'employee_photo_enrolled',
+        );
+      } catch (error) {
+        console.warn('Failed to enqueue face embedding job after employee photo enrollment', {
+          tenantId: session.tenantId,
+          employeeId: employee.id,
+          captureId,
+          error,
+        });
+      }
+
+      try {
         await enqueueTenantTrainingJob(session.tenantId, session.userId, 'employee_photo_enrolled');
       } catch (error) {
         console.warn('Failed to enqueue model training after employee photo enrollment', {
@@ -206,12 +248,18 @@ export const POST = withApi(
         });
       }
 
+      const photoCount = await prisma.employeeFaceLibrary.count({
+        where: { employeeProfileId: employee.id, tenantId: session.tenantId },
+      });
+
       return NextResponse.json(
         apiSuccess({
           id: enrolled.id,
           captureId,
           employeeId: employee.id,
           createdAt: enrolled.createdAt,
+          photoCount,
+          readyForRecognition: photoCount >= MIN_PHOTOS_FOR_RECOGNITION,
         }),
         { status: 201 },
       );

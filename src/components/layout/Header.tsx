@@ -116,6 +116,7 @@ export default function Header() {
       <div className="border-b border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-primary))]">
         <div className="mx-auto flex max-w-360 items-center gap-2 overflow-x-auto px-4 py-2">
           <HeaderLink href="/dashboard" label="Dashboard" pathname={pathname} />
+          <HeaderLink href="/camera/recent" label="Recent Captures" pathname={pathname} />
           <HeaderLink href="/feature-a" label="Employee Database" pathname={pathname} />
           {isPlatformAdmin && (
             <HeaderLink href="/support/feature-flags" label="Support" pathname={pathname} />
