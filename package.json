@@ -10,15 +10,20 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "db:migrate": "tsx scripts/apply-db-migrations.ts",
+    "db:migrate:prisma": "prisma migrate deploy",
     "db:seed": "tsx db/seeds/index.ts",
     "db:studio": "prisma studio",
     "dataset:export": "tsx scripts/export-employee-training-dataset.ts",
     "train:model": "python Face_Recognition/finetune.py --data_dir ./dataset --output_dir ./checkpoints --epochs 50 --batch_size 64 --lr_backbone 8e-6 --lr_head 8e-5",
     "train:model:from-db-photos": "npm run dataset:export && npm run train:model",
+    "face:embed:worker": "tsx scripts/process-face-embedding-jobs.ts",
+    "face:embed:worker:once": "tsx scripts/process-face-embedding-jobs.ts --once",
+    "face:embed:backfill": "tsx scripts/backfill-face-embeddings.ts",
+    "face:vec:backfill": "tsx scripts/backfill-pgvector-embeddings.ts",
     "train:model:worker": "tsx scripts/process-face-training-jobs.ts",
-    "train:model:worker:once": "tsx scripts/process-face-training-jobs.ts --once"
+    "train:model:worker:once": "tsx scripts/process-face-training-jobs.ts --once",
+    "face:cleanup:ghosts": "tsx scripts/cleanup-ghost-embeddings.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",

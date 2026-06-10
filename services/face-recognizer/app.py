@@ -146,7 +146,9 @@ async def embed(image: UploadFile = File(...)) -> dict[str, Any]:
 
         try:
             embedding = _extract_embedding_with_fallback(_face_analysis, image_pil)
-        except Exception:
+        except (TypeError, ValueError):
+            # Only retry with numpy array for format/type incompatibility.
+            # RuntimeError (e.g. "No face detected") must propagate.
             embedding = _extract_embedding_with_fallback(_face_analysis, np.asarray(image_pil))
 
         norm = float(np.linalg.norm(embedding))

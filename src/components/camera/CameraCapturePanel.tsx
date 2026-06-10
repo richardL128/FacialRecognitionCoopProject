@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { PIN_MAX_LENGTH, PIN_MIN_LENGTH, sanitizePinInput } from '@/lib/auth/pinSanitization';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 type UploadState = 'idle' | 'capturing' | 'uploading' | 'success' | 'error';
@@ -18,64 +19,21 @@ type UploadResponse = {
   };
 };
 
-type CaptureListItem = {
-  id: string;
-  imageUrl: string;
-  createdAt: string;
-};
-
-type CaptureListResponse = {
-  success: boolean;
-  data?: {
-    captures: CaptureListItem[];
-    hasMore: boolean;
-    nextCursor: string | null;
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-};
-
-type EmployeeLookupItem = {
-  id: string;
-  firstName: string;
-  name: string;
-  email: string | null;
-};
-
-type EmployeeLookupResponse = {
-  success: boolean;
-  data?: {
-    employees: EmployeeLookupItem[];
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-};
-
-type EnrollmentResponse = {
-  success: boolean;
-  data?: {
-    id: string;
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-};
-
 type RecognitionResponse = {
   success: boolean;
   data?: {
     matched: boolean;
-    status: 'matched' | 'no_match' | 'insufficient_data';
+    status:
+      | 'matched'
+      | 'no_match'
+      | 'insufficient_data'
+      | 'not_enrolled'
+      | 'indexing_in_progress'
+      | 'not_indexed';
     confidence: number | null;
     distance: number | null;
     candidatesEvaluated: number;
     thresholds: {
-      minCandidates: number;
       minConfidence: number;
     };
     topCandidate: {
@@ -99,6 +57,185 @@ type RecognitionResponse = {
   };
 };
 
+type PinVerifyResponse = {
+  success: boolean;
+  data?: {
+    employeeId: string;
+    firstName: string;
+    displayName: string;
+    email: string | null;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+};
+
+type VerifiedEmployee = {
+  employeeId: string;
+  displayName: string;
+};
+
+// ─── PIN Entry Overlay ───────────────────────────────────────────────────────
+
+function PinEntryOverlay({ onVerified }: { onVerified: (employee: VerifiedEmployee) => void }) {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const MAX_ATTEMPTS = 5;
+
+  // Block non-numeric key presses at the keyboard level (preserve control keys)
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    const allowed = [
+      'Backspace',
+      'Delete',
+      'Tab',
+      'Escape',
+      'Enter',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Home',
+      'End',
+    ];
+    if (allowed.includes(e.key)) return;
+    if (e.ctrlKey || e.metaKey) return; // allow copy/paste/select-all shortcuts
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text');
+    setError(null);
+    setPin((prev) => sanitizePinInput(prev + pasted));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const sanitizedPin = sanitizePinInput(pin);
+    if (sanitizedPin.length < PIN_MIN_LENGTH) return;
+
+    if (sanitizedPin !== pin) {
+      setPin(sanitizedPin);
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/camera/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pinCode: sanitizedPin }),
+      });
+      const payload = (await response.json()) as PinVerifyResponse;
+      if (response.ok && payload.success && payload.data) {
+        onVerified({
+          employeeId: payload.data.employeeId,
+          displayName: payload.data.displayName,
+        });
+      } else {
+        const next = attempts + 1;
+        setAttempts(next);
+        setPin('');
+        if (next >= MAX_ATTEMPTS) {
+          setError(`Too many failed attempts. Please contact an administrator.`);
+        } else {
+          setError(
+            payload.error?.message ??
+              `Incorrect PIN. ${MAX_ATTEMPTS - next} attempt${MAX_ATTEMPTS - next === 1 ? '' : 's'} remaining.`,
+          );
+        }
+      }
+    } catch {
+      setError('PIN verification failed. Please try again.');
+      setPin('');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const locked = attempts >= MAX_ATTEMPTS;
+
+  return (
+    <div className="w-full min-h-[calc(100dvh-13rem)] rounded-xl border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-primary))] p-6 shadow-sm flex items-center justify-center">
+      <div className="w-full max-w-sm">
+        <div className="rounded-xl border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-ice))] p-8 text-center shadow-sm">
+          <div
+            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ background: 'rgb(var(--pe-blue-10))' }}
+          >
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="rgb(var(--pe-blue-100))"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h2 className="pe-h4 mb-1" style={{ color: 'rgb(var(--pe-grey-100))' }}>
+            Enter Your PIN
+          </h2>
+          <p className="pe-body mb-6" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+            Enter your employee PIN to access the camera.
+          </p>
+
+          {locked ? (
+            <div
+              className="rounded-md px-3 py-2"
+              style={{ background: 'rgb(var(--pe-red-10))', color: 'rgb(var(--pe-red-100))' }}
+            >
+              <p className="pe-body">{error}</p>
+            </div>
+          ) : (
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]{4,6}"
+                maxLength={PIN_MAX_LENGTH}
+                autoComplete="one-time-code"
+                value={pin}
+                onChange={(e) => {
+                  setError(null);
+                  setPin(sanitizePinInput(e.target.value));
+                }}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                placeholder="● ● ● ●"
+                className="pe-grid-input w-full text-center text-2xl tracking-[0.5em]"
+                autoFocus
+                disabled={loading}
+              />
+              {error && (
+                <p className="pe-small" style={{ color: 'rgb(var(--pe-red-100))' }}>
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={loading || sanitizePinInput(pin).length < PIN_MIN_LENGTH}
+                className="w-full rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-4 py-2 pe-btn text-[rgb(var(--pe-grey-5))] transition-colors hover:bg-[rgb(var(--pe-blue-80))] disabled:cursor-not-allowed disabled:border-[rgb(var(--pe-grey-20))] disabled:bg-[rgb(var(--pe-grey-20))] disabled:text-[rgb(var(--pe-grey-60))]"
+              >
+                {loading ? 'Verifying…' : 'Continue'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CameraCapturePanel() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -106,72 +243,21 @@ export default function CameraCapturePanel() {
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  const [verifiedEmployee, setVerifiedEmployee] = useState<VerifiedEmployee | null>(null);
   const [state, setState] = useState<UploadState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [captureImageUrl, setCaptureImageUrl] = useState<string | null>(null);
   const [latestCaptureId, setLatestCaptureId] = useState<string | null>(null);
-  const [recentCaptures, setRecentCaptures] = useState<CaptureListItem[]>([]);
-  const [capturesLoading, setCapturesLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMoreCaptures, setHasMoreCaptures] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [recognitionLoading, setRecognitionLoading] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResponse['data'] | null>(
     null,
   );
-  const [employeeQuery, setEmployeeQuery] = useState('');
-  const [employeeResults, setEmployeeResults] = useState<EmployeeLookupItem[]>([]);
-  const [employeeLookupLoading, setEmployeeLookupLoading] = useState(false);
 
   const { enabled: cameraEnabled, loading: cameraFlagLoading } = useFeatureFlag(
     'CAMERA_CAPTURE_ENABLED',
     true,
   );
-
-  const loadRecentCaptures = useCallback(async () => {
-    setCapturesLoading(true);
-    try {
-      const response = await fetch('/api/camera/captures?limit=8');
-      const payload = (await response.json()) as CaptureListResponse;
-      if (!response.ok || !payload.success || !payload.data) {
-        throw new Error(payload.error?.message ?? 'Unable to load recent captures');
-      }
-      setRecentCaptures(payload.data.captures);
-      setHasMoreCaptures(payload.data.hasMore);
-      setNextCursor(payload.data.nextCursor);
-    } catch {
-      setRecentCaptures([]);
-      setHasMoreCaptures(false);
-      setNextCursor(null);
-    } finally {
-      setCapturesLoading(false);
-    }
-  }, []);
-
-  const loadMoreCaptures = useCallback(async () => {
-    if (!nextCursor || loadingMore) return;
-
-    setLoadingMore(true);
-    try {
-      const response = await fetch(
-        `/api/camera/captures?limit=8&cursor=${encodeURIComponent(nextCursor)}`,
-      );
-      const payload = (await response.json()) as CaptureListResponse;
-      if (!response.ok || !payload.success || !payload.data) {
-        throw new Error(payload.error?.message ?? 'Unable to load more captures');
-      }
-      const data = payload.data;
-
-      setRecentCaptures((prev) => [...prev, ...data.captures]);
-      setHasMoreCaptures(data.hasMore);
-      setNextCursor(data.nextCursor);
-    } catch {
-      setHasMoreCaptures(false);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, nextCursor]);
 
   const runRecognition = useCallback(async (imageBlob: Blob, excludeCaptureId?: string) => {
     setRecognitionLoading(true);
@@ -190,6 +276,12 @@ export default function CameraCapturePanel() {
       const payload = (await response.json()) as RecognitionResponse;
 
       if (!response.ok || !payload.success || !payload.data) {
+        if (payload.error?.code === 'NO_FACE_DETECTED') {
+          throw new Error('No face detected. Please retake your photo.');
+        }
+        if (payload.error?.code === 'EMBEDDING_SERVICE_UNAVAILABLE') {
+          throw new Error('Face service unavailable. Please try again shortly.');
+        }
         throw new Error(payload.error?.message ?? 'Recognition failed');
       }
 
@@ -207,26 +299,6 @@ export default function CameraCapturePanel() {
       setErrorMessage(message);
     } finally {
       setRecognitionLoading(false);
-    }
-  }, []);
-
-  const searchEmployees = useCallback(async (query: string) => {
-    setEmployeeLookupLoading(true);
-    try {
-      const url = `/api/feature-a/employees?limit=20&q=${encodeURIComponent(query)}`;
-      const response = await fetch(url);
-      const payload = (await response.json()) as EmployeeLookupResponse;
-
-      if (!response.ok || !payload.success || !payload.data) {
-        throw new Error(payload.error?.message ?? 'Unable to search employees');
-      }
-
-      setEmployeeResults(payload.data.employees);
-    } catch (error) {
-      setEmployeeResults([]);
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to search employees');
-    } finally {
-      setEmployeeLookupLoading(false);
     }
   }, []);
 
@@ -301,6 +373,7 @@ export default function CameraCapturePanel() {
     const imageFile = new File([imageBlob], 'capture.jpg', { type: 'image/jpeg' });
     const formData = new FormData();
     formData.append('image', imageFile);
+    formData.append('source', 'dashboard');
 
     try {
       const response = await fetch('/api/camera/upload', {
@@ -318,13 +391,12 @@ export default function CameraCapturePanel() {
       setCaptureImageUrl(payload.data.imageUrl);
       setLatestCaptureId(payload.data.captureId);
       setState('success');
-      await loadRecentCaptures();
       await runRecognition(imageBlob, payload.data.captureId);
     } catch (error) {
       setState('error');
       setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
     }
-  }, [loadRecentCaptures, runRecognition, stopStream]);
+  }, [runRecognition, stopStream]);
 
   const resetCapture = useCallback(() => {
     setCaptureImageUrl(null);
@@ -400,26 +472,6 @@ export default function CameraCapturePanel() {
     return () => observer.disconnect();
   }, [state]);
 
-  useEffect(() => {
-    if (!cameraFlagLoading && cameraEnabled) {
-      loadRecentCaptures();
-    }
-  }, [cameraEnabled, cameraFlagLoading, loadRecentCaptures]);
-
-  useEffect(() => {
-    if (!cameraEnabled || cameraFlagLoading) {
-      return;
-    }
-
-    const handle = setTimeout(() => {
-      void searchEmployees(employeeQuery.trim());
-    }, 250);
-
-    return () => {
-      clearTimeout(handle);
-    };
-  }, [cameraEnabled, cameraFlagLoading, employeeQuery, searchEmployees]);
-
   const statusText = useMemo(() => {
     if (state === 'uploading') return 'Uploading and sanitizing image...';
     if (state === 'success') return 'Image captured and stored successfully.';
@@ -451,14 +503,53 @@ export default function CameraCapturePanel() {
     );
   }
 
+  if (!verifiedEmployee) {
+    return <PinEntryOverlay onVerified={setVerifiedEmployee} />;
+  }
+
   return (
     <div className="w-full min-h-[calc(100dvh-13rem)] rounded-xl border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-primary))] p-6 shadow-sm">
-      <h1 className="pe-h2" style={{ color: 'rgb(var(--pe-grey-100))' }}>
-        Camera Capture
-      </h1>
-      <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-        Capture from your device camera and upload a sanitized image.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="pe-h2" style={{ color: 'rgb(var(--pe-grey-100))' }}>
+            Camera Capture
+          </h1>
+          <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+            Capture from your device camera and upload a sanitized image.
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium"
+            style={{ background: 'rgb(var(--pe-blue-10))', color: 'rgb(var(--pe-blue-100))' }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            {verifiedEmployee.displayName}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setVerifiedEmployee(null);
+              resetCapture();
+            }}
+            className="pe-btn text-xs text-[rgb(var(--pe-grey-60))] hover:text-[rgb(var(--pe-grey-90))] underline"
+          >
+            Switch user
+          </button>
+        </div>
+      </div>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-ice))] p-3">
@@ -553,58 +644,6 @@ export default function CameraCapturePanel() {
 
       <section className="mt-6">
         <h2 className="pe-h5" style={{ color: 'rgb(var(--pe-grey-100))' }}>
-          Recent Captures
-        </h2>
-        {capturesLoading ? (
-          <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-            Loading recent captures...
-          </p>
-        ) : recentCaptures.length === 0 ? (
-          <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-            No captures yet.
-          </p>
-        ) : (
-          <>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {recentCaptures.map((capture) => (
-                <article
-                  key={capture.id}
-                  className="overflow-hidden rounded-md border border-[rgb(var(--pe-grey-20))] bg-[rgb(var(--pe-ice))]"
-                >
-                  <Image
-                    src={capture.imageUrl}
-                    alt={`Capture ${capture.id}`}
-                    width={320}
-                    height={180}
-                    className="h-32 w-full object-cover"
-                  />
-                  <div className="px-2 py-2">
-                    <p className="pe-small" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-                      {new Date(capture.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {hasMoreCaptures && (
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={loadMoreCaptures}
-                  disabled={loadingMore}
-                  className="pe-btn rounded-md border border-[rgb(var(--pe-grey-20))] px-4 py-2 text-[rgb(var(--pe-grey-80))] hover:bg-[rgb(var(--pe-ice))] disabled:cursor-not-allowed disabled:text-[rgb(var(--pe-grey-60))]"
-                >
-                  {loadingMore ? 'Loading...' : 'Load more captures'}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-
-      <section className="mt-6">
-        <h2 className="pe-h5" style={{ color: 'rgb(var(--pe-grey-100))' }}>
           Recognition Result
         </h2>
 
@@ -616,42 +655,122 @@ export default function CameraCapturePanel() {
           <p className="pe-body mt-2" style={{ color: 'rgb(var(--pe-grey-70))' }}>
             Capture and upload an image to run recognition.
           </p>
-        ) : recognitionResult.matched && recognitionResult.match ? (
-          <div className="mt-3 rounded-md border border-[rgb(var(--pe-green-100))] bg-[rgb(var(--pe-green-10))] px-3 py-3">
-            <p className="pe-body" style={{ color: 'rgb(var(--pe-green-100))' }}>
-              Match found: {recognitionResult.match.displayName}
-            </p>
-            <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-              Confidence: {Math.round((recognitionResult.confidence ?? 0) * 100)}% | Candidates
-              evaluated: {recognitionResult.candidatesEvaluated}
-            </p>
-          </div>
-        ) : recognitionResult.status === 'insufficient_data' ? (
-          <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">
-            <p className="pe-body" style={{ color: 'rgb(var(--pe-yellow-100))' }}>
-              Not enough reference data yet.
-            </p>
-            <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-              Add more captures before recognition becomes reliable. Minimum required:{' '}
-              {recognitionResult.thresholds.minCandidates}; evaluated:{' '}
-              {recognitionResult.candidatesEvaluated}
-            </p>
-          </div>
         ) : (
-          <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">
-            <p className="pe-body" style={{ color: 'rgb(var(--pe-yellow-100))' }}>
-              No confident match found.
-            </p>
-            {recognitionResult.topCandidate ? (
-              <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-                Highest match: {recognitionResult.topCandidate.displayName} ({' '}
-                {Math.round((recognitionResult.topCandidate.confidence ?? 0) * 100)}%)
-              </p>
-            ) : null}
-            <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-              Candidates evaluated: {recognitionResult.candidatesEvaluated}
-            </p>
-          </div>
+          (() => {
+            const faceMatched = recognitionResult.matched && !!recognitionResult.match;
+            const facePerson = recognitionResult.match?.userId ?? null;
+            const pinPerson = verifiedEmployee?.employeeId ?? null;
+            const isCorrectMatch = faceMatched && facePerson === pinPerson;
+            const isIdentityConflict = faceMatched && facePerson !== pinPerson;
+
+            if (isCorrectMatch) {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-green-100))] bg-[rgb(var(--pe-green-10))] px-3 py-3">
+                  <p
+                    className="pe-body font-semibold"
+                    style={{ color: 'rgb(var(--pe-green-100))' }}
+                  >
+                    ✅ Identity Confirmed — {recognitionResult.match!.displayName}
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    PIN and face both match the same employee. Confidence:{' '}
+                    {Math.round((recognitionResult.confidence ?? 0) * 100)}% | Candidates evaluated:{' '}
+                    {recognitionResult.candidatesEvaluated}
+                  </p>
+                </div>
+              );
+            }
+
+            if (isIdentityConflict) {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-red-100))] bg-[rgb(var(--pe-red-10))] px-3 py-3">
+                  <p className="pe-body font-semibold" style={{ color: 'rgb(var(--pe-red-100))' }}>
+                    ⚠️ Identity Conflict
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong> but face
+                    matches <strong>{recognitionResult.match!.displayName}</strong>. Confidence:{' '}
+                    {Math.round((recognitionResult.confidence ?? 0) * 100)}%
+                  </p>
+                </div>
+              );
+            }
+
+            if (recognitionResult.status === 'not_enrolled') {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">
+                  <p className="pe-body" style={{ color: 'rgb(var(--pe-yellow-100))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but no face
+                    photos are enrolled.
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    Ask an administrator to add face photos to this employee&apos;s profile before
+                    face recognition can be used.
+                  </p>
+                </div>
+              );
+            }
+
+            if (recognitionResult.status === 'insufficient_data') {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">
+                  <p className="pe-body" style={{ color: 'rgb(var(--pe-yellow-100))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but the face
+                    scan didn&apos;t match their enrolled photos.
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    The photo may be unclear or low quality. Try retaking in better lighting, or
+                    update the employee&apos;s enrolled photos if their appearance has changed.
+                  </p>
+                </div>
+              );
+            }
+
+            if (recognitionResult.status === 'indexing_in_progress') {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-10))] px-3 py-3">
+                  <p className="pe-body" style={{ color: 'rgb(var(--pe-blue-100))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but face
+                    indexing is still in progress.
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    Recognition will improve after pending embedding jobs are processed.
+                  </p>
+                </div>
+              );
+            }
+
+            if (recognitionResult.status === 'not_indexed') {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-red-100))] bg-[rgb(var(--pe-red-10))] px-3 py-3">
+                  <p className="pe-body" style={{ color: 'rgb(var(--pe-red-100))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but enrolled
+                    photos are not indexed for recognition yet.
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    Indexing must complete before face matching is available.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">
+                <p className="pe-body" style={{ color: 'rgb(var(--pe-yellow-100))' }}>
+                  ❌ No confident face match found.
+                </p>
+                <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                  PIN verified as <strong>{verifiedEmployee?.displayName}</strong>.
+                  {recognitionResult.topCandidate
+                    ? ` Closest face: ${recognitionResult.topCandidate.displayName} (${Math.round((recognitionResult.topCandidate.confidence ?? 0) * 100)}%)`
+                    : ''}
+                </p>
+                <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                  Candidates evaluated: {recognitionResult.candidatesEvaluated}
+                </p>
+              </div>
+            );
+          })()
         )}
       </section>
     </div>

@@ -12,6 +12,7 @@ type Employee = {
   active: boolean;
   createdAt: string;
   photoCount: number;
+  hasPin: boolean;
 };
 
 type EmployeesResponse = {
@@ -35,6 +36,12 @@ export default function EmployeeDatabasePage() {
   const [employeeEmail, setEmployeeEmail] = useState('');
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+
+  // PIN editing state
+  const [pinEditing, setPinEditing] = useState<string | null>(null); // employeeId being edited
+  const [pinValue, setPinValue] = useState('');
+  const [pinSubmitting, setPinSubmitting] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
 
   const loadEmployees = useCallback(async () => {
     setError(null);
@@ -84,6 +91,41 @@ export default function EmployeeDatabasePage() {
       setError(err instanceof Error ? err.message : 'Unable to create employee');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startPinEdit(employeeId: string) {
+    setPinEditing(employeeId);
+    setPinValue('');
+    setPinError(null);
+  }
+
+  function cancelPinEdit() {
+    setPinEditing(null);
+    setPinValue('');
+    setPinError(null);
+  }
+
+  async function savePin(employeeId: string, newPin: string | null) {
+    setPinSubmitting(true);
+    setPinError(null);
+    try {
+      const response = await fetch(`/api/feature-a/employees/${employeeId}/pin`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pinCode: newPin }),
+      });
+      const payload = (await response.json()) as { success: boolean; error?: { message: string } };
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error?.message ?? 'Unable to update PIN');
+      }
+      setPinEditing(null);
+      setPinValue('');
+      await loadEmployees();
+    } catch (err) {
+      setPinError(err instanceof Error ? err.message : 'Unable to update PIN');
+    } finally {
+      setPinSubmitting(false);
     }
   }
 
@@ -178,6 +220,7 @@ export default function EmployeeDatabasePage() {
                   <th className="text-left">Email</th>
                   <th className="text-left">Created</th>
                   <th className="text-left">Photos</th>
+                  <th className="text-left">PIN</th>
                   <th className="text-left">Photo Access</th>
                 </tr>
               </thead>
@@ -204,6 +247,104 @@ export default function EmployeeDatabasePage() {
                       >
                         {employee.photoCount}
                       </span>
+                    </td>
+                    <td className="min-w-[200px]">
+                      {pinEditing === employee.id ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="password"
+                              inputMode="numeric"
+                              pattern="[0-9]{4,6}"
+                              maxLength={6}
+                              autoComplete="off"
+                              value={pinValue}
+                              onChange={(e) =>
+                                setPinValue(e.target.value.replace(/\D/g, '').slice(0, 6))
+                              }
+                              onKeyDown={(e) => {
+                                const allowed = [
+                                  'Backspace',
+                                  'Delete',
+                                  'Tab',
+                                  'Escape',
+                                  'Enter',
+                                  'ArrowLeft',
+                                  'ArrowRight',
+                                  'Home',
+                                  'End',
+                                ];
+                                if (allowed.includes(e.key)) return;
+                                if (e.ctrlKey || e.metaKey) return;
+                                if (!/^\d$/.test(e.key)) e.preventDefault();
+                              }}
+                              onPaste={(e) => {
+                                e.preventDefault();
+                                const pasted = e.clipboardData.getData('text');
+                                setPinValue((prev) =>
+                                  (prev + pasted).replace(/\D/g, '').slice(0, 6),
+                                );
+                              }}
+                              placeholder="4–6 digits"
+                              className="pe-grid-input w-28 text-sm"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => void savePin(employee.id, pinValue || null)}
+                              disabled={pinSubmitting || (pinValue.length > 0 && pinValue.length < 4)}
+                              className="pe-btn rounded-md border border-[rgb(var(--pe-blue-100))] bg-[rgb(var(--pe-blue-100))] px-3 py-1 text-xs text-[rgb(var(--pe-grey-5))] disabled:opacity-50"
+                            >
+                              {pinSubmitting ? '…' : 'Save'}
+                            </button>
+                            {employee.hasPin && (
+                              <button
+                                type="button"
+                                onClick={() => void savePin(employee.id, null)}
+                                disabled={pinSubmitting}
+                                className="pe-btn rounded-md border border-[rgb(var(--pe-red-100))] px-3 py-1 text-xs text-[rgb(var(--pe-red-100))] disabled:opacity-50"
+                              >
+                                Clear
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={cancelPinEdit}
+                              className="pe-btn rounded-md border border-[rgb(var(--pe-grey-20))] px-3 py-1 text-xs text-[rgb(var(--pe-grey-70))]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          {pinError && (
+                            <p className="text-xs" style={{ color: 'rgb(var(--pe-red-100))' }}>
+                              {pinError}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{
+                              background: employee.hasPin
+                                ? 'rgb(var(--pe-green-10))'
+                                : 'rgb(var(--pe-grey-10))',
+                              color: employee.hasPin
+                                ? 'rgb(var(--pe-green-100))'
+                                : 'rgb(var(--pe-grey-60))',
+                            }}
+                          >
+                            {employee.hasPin ? '●●●●' : 'No PIN'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => startPinEdit(employee.id)}
+                            className="pe-btn rounded-md border border-[rgb(var(--pe-grey-20))] px-3 py-1 text-xs text-[rgb(var(--pe-grey-80))] hover:bg-[rgb(var(--pe-ice))]"
+                          >
+                            {employee.hasPin ? 'Change' : 'Set PIN'}
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <Link

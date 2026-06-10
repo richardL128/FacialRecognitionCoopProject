@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withApi } from '@/lib/api/handler';
 import { auditLog } from '@/lib/audit/logger';
+import { deactivateFaceEmbeddingForCapture } from '@/lib/camera/embeddingJobs';
 import { enqueueTenantTrainingJob } from '@/lib/camera/trainingJobs';
 import { removeEmployeeCaptureFromTrainingDataset } from '@/lib/camera/trainingDataset';
 import { classifyDatabaseError } from '@/lib/db/error-classifier';
@@ -10,6 +11,8 @@ import { canUser } from '@/lib/permissions';
 import { apiError, apiSuccess } from '@/types/api';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -76,6 +79,17 @@ export const DELETE = withApi(
         );
       } catch (error) {
         console.warn('Failed to remove employee photo from training dataset', {
+          tenantId: session.tenantId,
+          employeeId,
+          captureId: photo.captureId,
+          error,
+        });
+      }
+
+      try {
+        await deactivateFaceEmbeddingForCapture(photo.captureId);
+      } catch (error) {
+        console.warn('Failed to deactivate face embedding after employee photo removal', {
           tenantId: session.tenantId,
           employeeId,
           captureId: photo.captureId,

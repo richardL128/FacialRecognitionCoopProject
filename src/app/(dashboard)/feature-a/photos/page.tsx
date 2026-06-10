@@ -51,6 +51,14 @@ type LinkedPhotosResponse = {
   error?: { code: string; message: string };
 };
 
+type EnrollPhotoResponse = {
+  success: boolean;
+  data?: {
+    embeddingStatus?: 'pending' | 'failed';
+  };
+  error?: { code?: string; message: string };
+};
+
 function EmployeePhotoAccessPage() {
   const { enabled, loading } = useFeatureFlag('module:feature-a', true);
   const searchParams = useSearchParams();
@@ -212,7 +220,7 @@ function EmployeePhotoAccessPage() {
     return () => observer.disconnect();
   }, [cameraActive]);
 
-  async function enrollCapture(captureId: string): Promise<void> {
+  async function enrollCapture(captureId: string): Promise<'pending' | 'failed'> {
     if (!selectedEmployeeId) {
       throw new Error('Select an employee before uploading photos');
     }
@@ -223,14 +231,18 @@ function EmployeePhotoAccessPage() {
       body: JSON.stringify({ captureId }),
     });
 
-    const payload = (await response.json()) as {
-      success: boolean;
-      error?: { message: string };
-    };
+    const payload = (await response.json()) as EnrollPhotoResponse;
 
     if (!response.ok || !payload.success) {
+      if (payload.error?.code === 'NO_FACE_DETECTED') {
+        throw new Error(
+          'Photo not linked. Please take a photo with a clear human face and try again.',
+        );
+      }
       throw new Error(payload.error?.message ?? 'Unable to link photo to employee');
     }
+
+    return payload.data?.embeddingStatus ?? 'pending';
   }
 
   async function uploadBlob(blob: Blob) {
@@ -242,6 +254,7 @@ function EmployeePhotoAccessPage() {
       const formData = new FormData();
       const file = new File([blob], `employee-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
       formData.append('image', file);
+      formData.append('source', 'employee_database');
 
       const response = await fetch('/api/camera/upload', {
         method: 'POST',
@@ -253,12 +266,18 @@ function EmployeePhotoAccessPage() {
         throw new Error(payload.error?.message ?? 'Unable to upload photo');
       }
 
-      await enrollCapture(payload.data.captureId);
+      const embeddingStatus = await enrollCapture(payload.data.captureId);
       setLatestImageUrl(payload.data.imageUrl);
       await loadLinkedPhotos(selectedEmployeeId);
 
       const employeeName = selectedEmployee?.name ?? 'employee';
-      setSuccess(`Photo uploaded and linked to ${employeeName}.`);
+      if (embeddingStatus === 'pending') {
+        setSuccess(`Photo uploaded and linked to ${employeeName}. Indexing is now in progress.`);
+      } else {
+        setSuccess(
+          `Photo uploaded and linked to ${employeeName}, but indexing is currently unavailable.`,
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload photo');
     } finally {

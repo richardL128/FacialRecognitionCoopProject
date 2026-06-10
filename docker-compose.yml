@@ -11,7 +11,31 @@ services:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/health || exit 1']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 30
+      start_period: 120s
+    profiles:
+      - face-recognition-v2
+
+  face-embedding-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: sh -c "npm run face:embed:worker"
+    environment:
+      DATABASE_URL: postgresql://appuser:apppass@db:5432/app_dev
+      FACE_RECOGNIZER_URL: http://face-recognizer:8000
+      FACE_EMBEDDING_POLL_INTERVAL_MS: ${FACE_EMBEDDING_POLL_INTERVAL_MS:-10000}
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      face-recognizer:
+        condition: service_healthy
+    restart: unless-stopped
     profiles:
       - face-recognition-v2
 
@@ -20,12 +44,27 @@ services:
       context: .
       dockerfile: Dockerfile
       target: builder
-    command: sh -c "npx prisma migrate deploy"
+    command: sh -c "npm run db:migrate"
     environment:
       DATABASE_URL: postgresql://appuser:apppass@db:5432/app_dev
     depends_on:
       db:
         condition: service_healthy
+    restart: on-failure
+
+  vec-backfill:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: sh -c "npm run face:vec:backfill"
+    environment:
+      DATABASE_URL: postgresql://appuser:apppass@db:5432/app_dev
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: on-failure
 
   app:
@@ -51,9 +90,11 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      vec-backfill:
+        condition: service_completed_successfully
 
   db:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17
     ports:
       - '${DB_HOST_PORT:-5433}:5432'
     environment:

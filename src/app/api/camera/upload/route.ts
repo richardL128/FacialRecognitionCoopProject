@@ -14,6 +14,7 @@ export const runtime = 'nodejs';
 
 const formDataSchema = z.object({
   image: z.instanceof(File),
+  source: z.enum(['dashboard', 'employee_database']).optional(),
 });
 
 export const POST = withApi(
@@ -21,6 +22,7 @@ export const POST = withApi(
     const formData = await request.formData();
     const parsed = formDataSchema.safeParse({
       image: formData.get('image'),
+      source: formData.get('source') ?? undefined,
     });
 
     if (!parsed.success) {
@@ -52,6 +54,7 @@ export const POST = withApi(
     const rawBuffer = Buffer.from(await rawFile.arrayBuffer());
 
     const sanitizedImage = await sanitizeImageUpload(rawBuffer, rawFile.type);
+    const captureSource = parsed.data.source ?? 'dashboard';
 
     const captureId = randomUUID();
     const imageUrl = buildCaptureImageUrl(captureId);
@@ -64,6 +67,7 @@ export const POST = withApi(
         tenantId: session.tenantId,
         userId: session.userId,
         imageUrl,
+        source: captureSource,
       },
     });
 
@@ -72,6 +76,7 @@ export const POST = withApi(
       const oldest = await prisma.cameraCapture.findMany({
         where: {
           tenantId: session.tenantId,
+          source: 'dashboard',
           employeeFaceLibrary: {
             none: {},
           },
@@ -102,6 +107,7 @@ export const POST = withApi(
       afterData: {
         sanitized: true,
         mimeType: sanitizedImage.mimeType,
+        source: captureSource,
       },
       request,
     });
