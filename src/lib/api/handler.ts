@@ -8,6 +8,7 @@ import { featureFlags } from '@/lib/feature-flags';
 import { auditLog } from '@/lib/audit/logger';
 import { requestLogger } from '@/lib/logger';
 import { apiError } from '@/types/api';
+import { extractRateLimitKey, formatRateLimitHeaders, rateLimit } from '@/lib/rate-limiter';
 
 type ApiContext = {
   session: SessionContext;
@@ -64,6 +65,29 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
       });
     }
 
+    // 2. Rate limiting — per-user or per-IP sliding window
+    const rateKey = extractRateLimitKey(request);
+    const rateResult = rateLimit(rateKey, url.pathname);
+    if (!rateResult.allowed) {
+      const retryAfter = Math.ceil((rateResult.resetAt.getTime() - Date.now()) / 1000);
+      log.warn(
+        { ip: rateKey.identifier, limit: rateResult.limit, retryAfter },
+        'Rate limit exceeded',
+      );
+      const response = NextResponse.json(
+        apiError('RATE_LIMIT_EXCEEDED', 'Too many requests. Please try again later.', {
+          requestId,
+          retryAfter,
+        }),
+        { status: 429 },
+      );
+      response.headers.set('x-request-id', requestId);
+      for (const [key, value] of Object.entries(formatRateLimitHeaders(rateResult))) {
+        response.headers.set(key, value);
+      }
+      return response;
+    }
+
     const log = requestLogger({
       method: request.method,
       path: url.pathname,
@@ -73,7 +97,7 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
     });
 
     try {
-      // 2. Validate body
+      // 3. Validate body
       if (options.bodySchema && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
         const body = await request.json();
         const result = options.bodySchema.safeParse(body);
@@ -85,7 +109,7 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
         }
       }
 
-      // 3. Validate query params
+      // 4. Validate query params
       if (options.querySchema) {
         const queryObj = Object.fromEntries(url.searchParams.entries());
         const result = options.querySchema.safeParse(queryObj);
@@ -97,7 +121,7 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
         }
       }
 
-      // 4. Feature flag gate (checks Postgres overrides)
+      // 5. Feature flag gate (checks Postgres overrides)
       if (options.featureFlag) {
         const enabled = await featureFlags.isEnabled(options.featureFlag, {
           tenantId: session.tenantId,
@@ -120,9 +144,13 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
         }
       }
 
-      // 5. Execute handler (permissions + tenant check + DB + audit happen inside)
+      // 6. Execute handler (permissions + tenant check + DB + audit happen inside)
       const response = await handler(request, { session, params, requestId });
       response.headers.set('x-request-id', requestId);
+      // Attach rate limit headers to successful responses
+      for (const [key, value] of Object.entries(formatRateLimitHeaders(rateResult))) {
+        response.headers.set(key, value);
+      }
       return response;
     } catch (error) {
       if (error instanceof AppError) {

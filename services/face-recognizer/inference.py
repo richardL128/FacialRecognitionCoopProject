@@ -1,5 +1,8 @@
 import os
 import cv2
+import hashlib
+import json
+from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,14 +11,82 @@ from torchvision import transforms
 import torchvision.models as models
 from PIL import Image
 import onnxruntime as ort
-from huggingface_hub import hf_hub_download
 
 # ==========================================
-# CẤU HÌNH REPO
+# LOCAL MODEL PATHS (bundled at build time)
 # ==========================================
-REPO_ID = "biometric-ai-lab/Face_Recognition"
-RECOG_FILENAME = "pytorch_model.bin"
-YOLO_FILENAME = "yolov8s-face-lindevs.onnx"
+MODELS_DIR = Path(__file__).parent / "models"
+RECOG_LOCAL = MODELS_DIR / "pytorch_model.bin"
+YOLO_LOCAL = MODELS_DIR / "yolov8s-face-lindevs.onnx"
+
+# HuggingFace fallback (only used if local models are missing)
+HF_REPO_ID = os.getenv("HF_REPO_ID", "biometric-ai-lab/Face_Recognition")
+HF_RECOG_FILENAME = "pytorch_model.bin"
+HF_YOLO_FILENAME = "yolov8s-face-lindevs.onnx"
+
+# Model version tracking — write a manifest when models are first loaded so we can
+# detect stale caches and re-download only when the repo checkpoint actually changes.
+VERSION_MANIFEST = MODELS_DIR / ".manifest.json"
+
+
+def _compute_file_hash(path: Path) -> str:
+    """SHA-256 hex digest of a file, used to detect model changes."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _ensure_models_downloaded() -> tuple[Path, Path]:
+    """
+    Return (recognition_model_path, yolo_detector_path).
+    Uses local files if they exist; otherwise downloads from HF as a one-time fallback.
+    """
+    if RECOG_LOCAL.exists() and YOLO_LOCAL.exists():
+        return RECOG_LOCAL, YOLO_LOCAL
+
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        from huggingface_hub import hf_hub_download
+
+        recog_path = Path(
+            hf_hub_download(
+                repo_id=HF_REPO_ID,
+                filename=HF_RECOG_FILENAME,
+                cache_dir=str(MODELS_DIR.parent / ".hf_cache"),
+            )
+        )
+        yolo_path = Path(
+            hf_hub_download(
+                repo_id=HF_REPO_ID,
+                filename=HF_YOLO_FILENAME,
+                cache_dir=str(MODELS_DIR.parent / ".hf_cache"),
+            )
+        )
+        # Copy into the bundled models directory so Docker layers can cache them.
+        import shutil
+
+        shutil.copy2(recog_path, RECOG_LOCAL)
+        shutil.copy2(yolo_path, YOLO_LOCAL)
+
+        # Write version manifest for future change detection.
+        manifest = {
+            "hf_repo": HF_REPO_ID,
+            "files": {
+                HF_RECOG_FILENAME: _compute_file_hash(RECOG_LOCAL),
+                HF_YOLO_FILENAME: _compute_file_hash(YOLO_LOCAL),
+            },
+        }
+        VERSION_MANIFEST.write_text(json.dumps(manifest))
+        print(f"✅ Downloaded models from {HF_REPO_ID} to local cache.")
+        return RECOG_LOCAL, YOLO_LOCAL
+
+    except Exception as exc:
+        raise RuntimeError(
+            f"❌ Failed to load or download models. Local files missing and HF download failed.\nError: {exc}"
+        ) from exc
 
 
 # ==========================================
@@ -136,16 +207,11 @@ class FaceAnalysis:
         self.device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"🚀 Initializing Face Analysis on {self.device}...")
 
-        # 1. Tải Model
-        try:
-            print(f"📥 Checking models from {REPO_ID}...")
-            recog_path = hf_hub_download(repo_id=REPO_ID, filename=RECOG_FILENAME)
-            yolo_path = hf_hub_download(repo_id=REPO_ID, filename=YOLO_FILENAME)
-        except Exception as e:
-            raise RuntimeError(f"❌ Failed to download models. Check internet or Repo ID.\nError: {e}")
+        # 1. Resolve model paths (local first, HF fallback)
+        recog_path, yolo_path = _ensure_models_downloaded()
 
         # 2. Init YOLO
-        self.yolo = YOLOFaceDetector(yolo_path, conf_threshold=0.5)
+        self.yolo = YOLOFaceDetector(str(yolo_path), conf_threshold=0.5)
 
         # 3. Init Recognition
         self.model = FaceRecognitionModel().to(self.device)

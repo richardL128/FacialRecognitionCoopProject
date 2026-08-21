@@ -211,8 +211,8 @@ and compare parity across local npm and Docker endpoints.
 .\sync-local-docker.ps1 -NoCache
 .\sync-local-docker.ps1 -SkipSeed
 .\sync-local-docker.ps1 -ResetDb
-.\sync-local-docker.ps1 -StartLocalNpm
-.\sync-local-docker.ps1 -LocalPort 3000 -DockerPort 3010 -DbPort 5433
+.\sync-local-docker.ps1 -LocalPort 3000 -DockerPort 3010 -DbPort 5433.\sync-local-docker.ps1 -StartLocalNpm
+
 ```
 
 Note: keep `npm run dev` running on the local port before the parity check step.

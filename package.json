@@ -23,7 +23,9 @@
     "face:vec:backfill": "tsx scripts/backfill-pgvector-embeddings.ts",
     "train:model:worker": "tsx scripts/process-face-training-jobs.ts",
     "train:model:worker:once": "tsx scripts/process-face-training-jobs.ts --once",
-    "face:cleanup:ghosts": "tsx scripts/cleanup-ghost-embeddings.ts"
+    "face:cleanup:ghosts": "tsx scripts/cleanup-ghost-embeddings.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
@@ -79,6 +81,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "prettier": "^3.8.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.8"
   }
 }

@@ -29,7 +29,8 @@ type RecognitionResponse = {
       | 'insufficient_data'
       | 'not_enrolled'
       | 'indexing_in_progress'
-      | 'not_indexed';
+      | 'not_indexed'
+      | 'service_unavailable';
     confidence: number | null;
     distance: number | null;
     candidatesEvaluated: number;
@@ -749,6 +750,20 @@ export default function CameraCapturePanel() {
                   </p>
                   <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
                     Indexing must complete before face matching is available.
+                  </p>
+                </div>
+              );
+            }
+
+            if (recognitionResult.status === 'service_unavailable') {
+              return (
+                <div className="mt-3 rounded-md border border-[rgb(var(--pe-red-100))] bg-[rgb(var(--pe-red-10))] px-3 py-3">
+                  <p className="pe-body" style={{ color: 'rgb(var(--pe-red-100))' }}>
+                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but face
+                    recognition is temporarily unavailable.
+                  </p>
+                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
+                    The face embedding service is not responding right now. Please retry shortly.
                   </p>
                 </div>
               );

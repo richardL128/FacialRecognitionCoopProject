@@ -3,18 +3,16 @@ services:
     build:
       context: ./services/face-recognizer
       dockerfile: Dockerfile
+      args:
+        HF_REPO_ID: biometric-ai-lab/Face_Recognition
     environment:
-      MODEL_PROVIDER: huggingface
       HF_REPO_ID: biometric-ai-lab/Face_Recognition
-      INFERENCE_SCRIPT_URL: https://huggingface.co/biometric-ai-lab/Face_Recognition/resolve/main/inference.py
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/health || exit 1']
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 120s
-    profiles:
-      - face-recognition-v2
 
   face-embedding-worker:
     build:
@@ -36,8 +34,6 @@ services:
       face-recognizer:
         condition: service_healthy
     restart: unless-stopped
-    profiles:
-      - face-recognition-v2
 
   migrate:
     build:
@@ -92,6 +88,8 @@ services:
         condition: service_completed_successfully
       vec-backfill:
         condition: service_completed_successfully
+      face-recognizer:
+        condition: service_healthy
 
   db:
     image: pgvector/pgvector:pg17

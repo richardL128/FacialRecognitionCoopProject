@@ -3,12 +3,7 @@ import { z } from 'zod';
 import { Prisma } from '@/generated/prisma/client';
 import { withApi } from '@/lib/api/handler';
 import { auditLog } from '@/lib/audit/logger';
-import {
-  FaceEmbeddingError,
-  cosineSimilarity,
-  getFaceEmbedding,
-  normalizeEmbeddingVector,
-} from '@/lib/camera/embeddingService';
+import { getFaceEmbedding, normalizeEmbeddingVector } from '@/lib/camera/embeddingService';
 import { getEmbeddingModelKey } from '@/lib/camera/embeddingJobs';
 import { scanCentroidsForProbe } from '@/lib/camera/centroidService';
 import { prisma } from '@/lib/db/prisma';
@@ -20,7 +15,15 @@ import { apiError, apiSuccess } from '@/types/api';
 
 export const runtime = 'nodejs';
 
+// How many candidate embeddings to fetch per employee in Stage B.
+// The DB orders by cosine distance (HNSW) and returns the top-N closest vectors;
+// we then score those in JS for the ambiguity check.
 const CANDIDATE_LIMIT = Number(process.env.FACE_RECOGNITION_CANDIDATE_LIMIT ?? 120);
+
+// Maximum cosine distance threshold for loading embeddings in Stage B.
+// Embeddings farther than this from the probe are filtered at the SQL level
+// using pgvector's <=> operator, so we never load irrelevant vectors into Node.js memory.
+const MAX_COSINE_DISTANCE = Number(process.env.FACE_RECOGNITION_MAX_COSINE_DISTANCE ?? 0.35);
 const MIN_CANDIDATES = 3;
 const MIN_CONFIDENCE_EMBEDDING = Number(process.env.FACE_RECOGNIZER_MIN_CONFIDENCE ?? 0.75);
 const EMBEDDING_AMBIGUITY_MARGIN = Number(process.env.FACE_RECOGNIZER_AMBIGUITY_MARGIN ?? 0.03);
@@ -97,107 +100,6 @@ type MatchPayload = {
   telemetry: MatchTelemetry;
 };
 
-type RecognitionStatus =
-  | 'matched'
-  | 'no_match'
-  | 'insufficient_data'
-  | 'not_enrolled'
-  | 'indexing_in_progress'
-  | 'not_indexed';
-
-type EmbeddingDependencyRow = {
-  libraryPhotos: number | string | null;
-  activeEmbeddings: number | string | null;
-  centroidCount: number | string | null;
-  pendingJobs: number | string | null;
-  runningJobs: number | string | null;
-  failedJobs: number | string | null;
-};
-
-type EmbeddingDependencySnapshot = {
-  libraryPhotos: number;
-  activeEmbeddings: number;
-  centroidCount: number;
-  pendingJobs: number;
-  runningJobs: number;
-  failedJobs: number;
-};
-
-function asCount(value: number | string | null | undefined): number {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-async function loadEmbeddingDependencySnapshot(
-  tenantId: string,
-): Promise<EmbeddingDependencySnapshot | null> {
-  try {
-    const rows = await prisma.$queryRaw<EmbeddingDependencyRow[]>(Prisma.sql`
-      SELECT
-        (
-          SELECT count(*)
-          FROM employee_face_library efl
-          JOIN employee_profiles ep ON ep.id = efl.employee_profile_id
-          WHERE efl.tenant_id = ${tenantId}::uuid
-            AND ep.active = true
-        ) AS "libraryPhotos",
-        (
-          SELECT count(*)
-          FROM face_embeddings fe
-          JOIN employee_profiles ep ON ep.id = fe.employee_profile_id
-          WHERE fe.tenant_id = ${tenantId}::uuid
-            AND fe.model_key = ${EMBEDDING_MODEL_KEY}
-            AND fe.active = true
-            AND fe.embedding_vec IS NOT NULL
-            AND ep.active = true
-        ) AS "activeEmbeddings",
-        (
-          SELECT count(*)
-          FROM face_employee_centroids fec
-          JOIN employee_profiles ep ON ep.id = fec.employee_profile_id
-          WHERE fec.tenant_id = ${tenantId}::uuid
-            AND fec.model_key = ${EMBEDDING_MODEL_KEY}
-            AND ep.active = true
-        ) AS "centroidCount",
-        (
-          SELECT count(*)
-          FROM face_embedding_jobs fej
-          WHERE fej.tenant_id = ${tenantId}::uuid
-            AND fej.model_key = ${EMBEDDING_MODEL_KEY}
-            AND fej.status = 'pending'
-        ) AS "pendingJobs",
-        (
-          SELECT count(*)
-          FROM face_embedding_jobs fej
-          WHERE fej.tenant_id = ${tenantId}::uuid
-            AND fej.model_key = ${EMBEDDING_MODEL_KEY}
-            AND fej.status = 'running'
-        ) AS "runningJobs",
-        (
-          SELECT count(*)
-          FROM face_embedding_jobs fej
-          WHERE fej.tenant_id = ${tenantId}::uuid
-            AND fej.model_key = ${EMBEDDING_MODEL_KEY}
-            AND fej.status = 'failed'
-        ) AS "failedJobs"
-    `);
-    const row = rows[0];
-    if (!row) {
-      return null;
-    }
-    return {
-      libraryPhotos: asCount(row.libraryPhotos),
-      activeEmbeddings: asCount(row.activeEmbeddings),
-      centroidCount: asCount(row.centroidCount),
-      pendingJobs: asCount(row.pendingJobs),
-      runningJobs: asCount(row.runningJobs),
-      failedJobs: asCount(row.failedJobs),
-    };
-  } catch {
-    return null;
-  }
-}
-
 // ─── Stage-B helpers (shared by centroid and legacy pipeline) ────────────────
 
 type LibraryCandidateRow = {
@@ -208,12 +110,14 @@ type LibraryCandidateRow = {
   employeeFirstName: string;
   embeddingDim: number | null;
   embedding: number[];
+  cosineDistance: number; // pgvector <=> result — avoids redundant JS cosineSimilarity()
 };
 
 type IdentityEmbeddingVector = {
   captureId: string;
   embeddingDim: number | null;
   embedding: number[];
+  cosineDistance: number; // pgvector <=> result — avoids redundant JS cosineSimilarity()
 };
 
 type IdentityEmbeddingEntry = {
@@ -236,7 +140,12 @@ function buildIdentityEmbeddingLibrary(rows: LibraryCandidateRow[]): IdentityEmb
         userEmail: row.employeeEmail ?? `${row.employeeFirstName}@employee.local`,
         displayName: row.employeeName,
         vectors: [
-          { captureId: row.captureId, embeddingDim: row.embeddingDim, embedding: row.embedding },
+          {
+            captureId: row.captureId,
+            embeddingDim: row.embeddingDim,
+            embedding: row.embedding,
+            cosineDistance: row.cosineDistance,
+          },
         ],
       };
       continue;
@@ -245,6 +154,7 @@ function buildIdentityEmbeddingLibrary(rows: LibraryCandidateRow[]): IdentityEmb
       captureId: row.captureId,
       embeddingDim: row.embeddingDim,
       embedding: row.embedding,
+      cosineDistance: row.cosineDistance,
     });
   }
 
@@ -253,7 +163,9 @@ function buildIdentityEmbeddingLibrary(rows: LibraryCandidateRow[]): IdentityEmb
 
 /**
  * Inner loop: compare probe embedding against every vector in an identity library.
- * Returns per-employee best match list, sorted descending by confidence.
+ * Returns all matching vectors (not deduplicated per employee) so that the ambiguity
+ * check in buildFinalResult can distinguish between same-identity high-confidence
+ * matches (acceptable) and cross-identity ambiguity (reject).
  */
 function scoreEmbeddingLibrary(
   probeEmbedding: number[],
@@ -283,18 +195,15 @@ function scoreEmbeddingLibrary(
           candidateComputeErrors += 1;
           continue;
         }
-        const raw = vector.embedding.map(Number).filter(Number.isFinite);
-        if (raw.length !== vector.embedding.length || raw.length !== probeEmbedding.length) {
+        // Use the SQL-computed cosineDistance directly — no need to recompute in JS.
+        const distance = Number(vector.cosineDistance);
+        if (!Number.isFinite(distance)) {
           candidateComputeErrors += 1;
           continue;
         }
-        const candidateEmbedding = normalizeEmbeddingVector(raw);
-        const similarity = cosineSimilarity(probeEmbedding, candidateEmbedding);
-        if (!Number.isFinite(similarity)) {
-          candidateComputeErrors += 1;
-          continue;
-        }
-        const clamped = Math.max(-1, Math.min(1, similarity));
+        // pgvector <=> returns cosine distance in [0, 2]; confidence = 1 - distance.
+        const clampedDist = Math.max(0, Math.min(2, distance));
+        const confidence = Number((1 - clampedDist).toFixed(4));
         const m: RecognitionMatch = {
           candidate: {
             captureId: vector.captureId,
@@ -302,11 +211,18 @@ function scoreEmbeddingLibrary(
             userEmail: entry.userEmail,
             displayName: entry.displayName,
           },
-          confidence: Number(clamped.toFixed(4)),
-          distance: Number((1 - clamped).toFixed(4)),
+          confidence,
+          distance: Number(clampedDist.toFixed(4)),
         };
         if (!bestForIdentity || m.confidence > bestForIdentity.confidence) {
           bestForIdentity = m;
+        }
+        // Push every vector that meets the confidence threshold so that same-employee
+        // high-confidence matches can occupy the top positions in the sorted list.
+        // This lets buildFinalResult's ambiguity check correctly distinguish between
+        // same-identity strong matches (acceptable) and cross-identity ambiguity (reject).
+        if (confidence >= MIN_CONFIDENCE_EMBEDDING) {
+          matches.push(m);
         }
       } catch {
         candidateReadErrors += 1;
@@ -314,7 +230,12 @@ function scoreEmbeddingLibrary(
       }
     }
 
-    if (bestForIdentity) matches.push(bestForIdentity);
+    // Push the best vector for this employee if it wasn't already added above
+    // (i.e. it fell below the confidence threshold). buildFinalResult needs it
+    // to populate the "best" field in the rejection telemetry.
+    if (bestForIdentity && bestForIdentity.confidence < MIN_CONFIDENCE_EMBEDDING) {
+      matches.push(bestForIdentity);
+    }
   }
 
   return { matches, candidatesRequested, candidateReadErrors, candidateComputeErrors };
@@ -353,15 +274,7 @@ function buildFinalResult(
     };
   }
 
-  const bestMatchByEmployee = new Map<string, (typeof matches)[number]>();
-  for (const match of matches) {
-    const existing = bestMatchByEmployee.get(match.candidate.userId);
-    if (!existing || match.confidence > existing.confidence) {
-      bestMatchByEmployee.set(match.candidate.userId, match);
-    }
-  }
-
-  const sorted = [...bestMatchByEmployee.values()].sort((a, b) => b.confidence - a.confidence);
+  const sorted = [...matches].sort((a, b) => b.confidence - a.confidence);
   const best = sorted[0] ?? null;
   const secondBest = sorted[1] ?? null;
   const isAboveThreshold = !!best && best.confidence >= MIN_CONFIDENCE_EMBEDDING;
@@ -463,7 +376,9 @@ async function buildCentroidFirstRecognition(
   // ── Stage B: load & score all embeddings for shortlisted employees ────────
   let captureCandidates: LibraryCandidateRow[] = [];
   if (shortlistedEmployeeIds.length > 0) {
-    // Build a parameterised IN list using unnest to stay safe with Prisma raw.
+    // Use pgvector <=> operator to order by cosine distance (HNSW index).
+    // Filter at the SQL level: only load embeddings within MAX_COSINE_DISTANCE.
+    // This avoids loading irrelevant vectors into Node.js memory.
     captureCandidates = await prisma.$queryRaw<LibraryCandidateRow[]>(
       Prisma.sql`
         SELECT
@@ -472,8 +387,9 @@ async function buildCentroidFirstRecognition(
           ep.email            AS "employeeEmail",
           ep.name             AS "employeeName",
           ep.first_name       AS "employeeFirstName",
-          fe.embedding_dim            AS "embeddingDim",
-          fe.embedding_vec::float4[]  AS "embedding"
+          fe.embedding_dim    AS "embeddingDim",
+          fe.embedding_vec::float4[]  AS "embedding",
+          (fe.embedding_vec <=> ${probeVecLiteral}::vector(512))  AS "cosineDistance"
         FROM face_embeddings fe
         JOIN employee_profiles ep ON ep.id = fe.employee_profile_id
         WHERE fe.tenant_id         = ${tenantId}::uuid
@@ -485,7 +401,9 @@ async function buildCentroidFirstRecognition(
             SELECT unnest(${shortlistedEmployeeIds}::uuid[])
           )
           ${excludeCaptureId ? Prisma.sql`AND fe.capture_id <> ${excludeCaptureId}::uuid` : Prisma.sql``}
-        ORDER BY fe.updated_at DESC
+          AND (fe.embedding_vec <=> ${probeVecLiteral}::vector(512)) <= ${MAX_COSINE_DISTANCE}
+        ORDER BY fe.embedding_vec <=> ${probeVecLiteral}::vector(512)
+        LIMIT ${CANDIDATE_LIMIT}
       `,
     );
   }
@@ -517,7 +435,11 @@ async function buildLegacyEmbeddingRecognition(
   const startedAt = Date.now();
   const algorithm = `${EMBEDDING_MODEL_KEY}-vector-store`;
   const probeEmbedding = normalizeEmbeddingVector(await getFaceEmbedding(probeBuffer));
+  const probeVecLiteral = `[${probeEmbedding.join(',')}]`;
 
+  // Use pgvector <=> operator to order by cosine distance (HNSW index).
+  // Filter at the SQL level: only load embeddings within MAX_COSINE_DISTANCE.
+  // This avoids full table scans and leverages the HNSW index built in migration 0006.
   const captureCandidates = await prisma.$queryRaw<LibraryCandidateRow[]>(
     Prisma.sql`
       SELECT
@@ -526,17 +448,19 @@ async function buildLegacyEmbeddingRecognition(
         ep.email            AS "employeeEmail",
         ep.name             AS "employeeName",
         ep.first_name       AS "employeeFirstName",
-        fe.embedding_dim            AS "embeddingDim",
-        fe.embedding_vec::float4[]  AS "embedding"
+        fe.embedding_dim    AS "embeddingDim",
+        fe.embedding_vec::float4[]  AS "embedding",
+        (fe.embedding_vec <=> ${probeVecLiteral}::vector(512))  AS "cosineDistance"
       FROM face_embeddings fe
       JOIN employee_profiles ep ON ep.id = fe.employee_profile_id
       WHERE fe.tenant_id  = ${tenantId}::uuid
-        AND fe.active      = true
-        AND fe.model_key   = ${EMBEDDING_MODEL_KEY}
-        AND ep.active      = true
+        AND fe.active     = true
+        AND fe.model_key  = ${EMBEDDING_MODEL_KEY}
+        AND ep.active     = true
         AND fe.embedding_vec IS NOT NULL
         ${excludeCaptureId ? Prisma.sql`AND fe.capture_id <> ${excludeCaptureId}::uuid` : Prisma.sql``}
-      ORDER BY fe.updated_at DESC
+        AND (fe.embedding_vec <=> ${probeVecLiteral}::vector(512)) <= ${MAX_COSINE_DISTANCE}
+      ORDER BY fe.embedding_vec <=> ${probeVecLiteral}::vector(512)
       LIMIT ${CANDIDATE_LIMIT}
     `,
   );
@@ -615,31 +539,14 @@ export const POST = withApi(
         );
       }
     } catch (error) {
-      if (error instanceof FaceEmbeddingError) {
-        if (error.code === 'NO_FACE_DETECTED') {
-          return NextResponse.json(
-            apiError('NO_FACE_DETECTED', 'No face detected. Please retake the photo.'),
-            { status: 422 },
-          );
-        }
-
-        if (error.code === 'EMBEDDING_SERVICE_UNAVAILABLE') {
-          return NextResponse.json(
-            apiError(
-              'EMBEDDING_SERVICE_UNAVAILABLE',
-              'Face embedding service is unavailable. Please try again shortly.',
-            ),
-            { status: 503 },
-          );
-        }
-
+      fallbackReason = error instanceof Error ? error.message : 'embedding_provider_error';
+      const isNoFaceError = fallbackReason.toLowerCase().includes('no face detected');
+      if (isNoFaceError) {
         return NextResponse.json(
-          apiError('EMBEDDING_SERVICE_FAILED', 'Face embedding service failed this request.'),
-          { status: 502 },
+          apiError('NO_FACE_DETECTED', 'No face detected. Please retake the photo.'),
+          { status: 422 },
         );
       }
-
-      fallbackReason = error instanceof Error ? error.message : 'embedding_provider_error';
 
       // If centroid pipeline threw, try legacy as a safety fallback.
       if (useCentroidPipeline) {
@@ -701,36 +608,18 @@ export const POST = withApi(
       recognition.matched && !!recognition.best && recognition.best.confidence >= minConfidence;
 
     // Status derivation:
-    //  - indexing states ('indexing_in_progress' / 'not_indexed') when library exists but vectors are unavailable
-    //  - 'insufficient_data' when vectors exist but similarity gate rejects the probe
-    //  - 'no_match' when candidates were evaluated but confidence was insufficient
-    const dependencySnapshot =
-      !isConfidentMatch && recognition.candidatesEvaluated === 0
-        ? await loadEmbeddingDependencySnapshot(session.tenantId)
-        : null;
-
-    const status: RecognitionStatus = isConfidentMatch
+    //  - 'not_enrolled'    → centroid pipeline ran, no centroids exist (no enrolled photos at all)
+    //  - 'insufficient_data' → centroid pipeline ran, centroid similarity below floor
+    //  - 'no_match'        → legacy pipeline, fallback path, or candidates evaluated but none confident
+    const status = isConfidentMatch
       ? 'matched'
       : recognition.candidatesEvaluated > 0
         ? 'no_match'
-        : dependencySnapshot
-          ? dependencySnapshot.libraryPhotos === 0
+        : useCentroidPipeline && !fallbackApplied
+          ? telemetry.centroidsScanned === 0
             ? 'not_enrolled'
-            : dependencySnapshot.pendingJobs + dependencySnapshot.runningJobs > 0
-              ? 'indexing_in_progress'
-              : dependencySnapshot.activeEmbeddings === 0 ||
-                  (useCentroidPipeline &&
-                    !fallbackApplied &&
-                    dependencySnapshot.centroidCount === 0)
-                ? 'not_indexed'
-                : useCentroidPipeline && !fallbackApplied
-                  ? 'insufficient_data'
-                  : 'no_match'
-          : useCentroidPipeline && !fallbackApplied
-            ? telemetry.centroidsScanned === 0
-              ? 'not_enrolled'
-              : 'insufficient_data'
-            : 'no_match';
+            : 'insufficient_data'
+          : 'no_match';
 
     await auditLog({
       tenantId: session.tenantId,
@@ -750,7 +639,6 @@ export const POST = withApi(
         usedCentroidPipeline: useCentroidPipeline,
         fallbackApplied,
         fallbackReason,
-        embeddingDependencySnapshot: dependencySnapshot,
         recognitionTelemetry: telemetry,
         minCandidates: MIN_CANDIDATES,
         minConfidence,

@@ -116,6 +116,16 @@ function RecognitionBadge({ recognition }: { recognition: RecognitionMeta }) {
     );
   }
 
+  if (status === 'service_unavailable') {
+    return (
+      <div className="rounded border border-[rgb(var(--pe-red-100))] bg-[rgb(var(--pe-red-10))] px-2 py-1.5">
+        <p className="text-xs font-semibold" style={{ color: 'rgb(var(--pe-red-100))' }}>
+          Service unavailable
+        </p>
+      </div>
+    );
+  }
+
   return null;
 }
 
