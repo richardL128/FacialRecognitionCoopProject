@@ -70,5 +70,5 @@ See [rollback.md](rollback.md) for rollback procedure.
 
 ## Health Check
 ```
-GET /api/health   # Add this endpoint when needed
+GET /api/health/ready
 ```

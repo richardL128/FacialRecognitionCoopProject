@@ -1,6 +1,6 @@
-# [Your Project Name] — Base Scaffold
+# PayEvo
 
-This is the **PayEvo-Base** scaffolding template. Copy and customise this repo to start a new project with all standards pre-configured.
+PayEvo is a development prototype for employee enrolment, camera capture, and assisted face recognition. It is not approved for production biometric use; see [Handoff.md](Handoff.md) for release blockers and current repository state.
 
 ## Quick Start
 
@@ -231,38 +231,21 @@ You can also let the script start npm for you by using `-StartLocalNpm`.
 - Role-based access control (RBAC) with tenant isolation
 - Structured logging (Pino) with PII redaction
 - Docker + docker-compose for local dev
-- LLM documentation system (`.llm/`) for AI-assisted development
+- Directory-focused agent guides and concise project reference documents
 
 ## Key Docs
 
-| Doc                       | Purpose                                             |
-| ------------------------- | --------------------------------------------------- |
-| `.llm/PROJECT.md`         | Project overview, stack, constraints                |
-| `.llm/ARCHITECTURE.md`    | Directory structure, data flow patterns             |
-| `.llm/CONVENTIONS.md`     | Code rules — read before writing any code           |
-| `.llm/DOMAIN_GLOSSARY.md` | Canonical terminology                               |
-| `.llm/tuning/`            | LLM-specific instructions (Claude, Cursor, Copilot) |
-| `.llm/skills/`            | Domain skill docs for AI-assisted coding            |
-| `.llm/prompts/`           | Reusable prompt templates                           |
-| `.legacy/`                | Previous version reference docs, schema, decisions  |
-| `docs/adr/`               | Architecture Decision Records                       |
-| `docs/security/`          | Threat model, data classification                   |
-| `docs/runbooks/`          | Deploy, rollback, incident response                 |
-
-## LLM-Assisted Development
-
-See `.llm/tuning/` for instructions tailored to each AI tool.
-Always start a new AI conversation by referencing `.llm/PROJECT.md` and `.llm/CONVENTIONS.md`.
-
-## Customising This Scaffold
-
-1. Update `.llm/PROJECT.md` with your project details
-2. Update `.llm/DOMAIN_GLOSSARY.md` with your domain terms
-3. Update `package.json` name field
-4. Update `src/app/layout.tsx` metadata
-5. Add your roles to `prisma/schema.prisma` and `src/lib/permissions/index.ts`
-6. Replace placeholder pages in `src/app/(dashboard)/` with real features
-7. Fill in `.llm/PLAN.md` with your phased roadmap
+| Doc | Purpose |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | Entry point for directory-focused engineering guidance |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System boundaries and data flow |
+| [CONVENTIONS.md](CONVENTIONS.md) | Cross-cutting implementation and security rules |
+| [PROGRESS.md](PROGRESS.md) | Delivered work and current priorities |
+| [Handoff.md](Handoff.md) | Production blockers, known issues, branches, and worktrees |
+| [ExecutiveSummary.md](ExecutiveSummary.md) | Leadership-level project summary |
+| `docs/adr/` | Architecture Decision Records |
+| `docs/security/` | Threat model and data classification work to complete |
+| `docs/runbooks/` | Deployment, rollback, and incident runbooks to complete |
 
 ## Security Notes
 

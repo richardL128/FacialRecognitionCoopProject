@@ -41,4 +41,4 @@
 
 ### 6. Post-Incident
 - [ ] Write a brief incident summary (what happened, timeline, fix, prevention)
-- [ ] Add a task to PLAN.md for any follow-up improvements
+- [ ] Record follow-up prevention work in `PROGRESS.md` and the team issue tracker

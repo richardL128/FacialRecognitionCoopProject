@@ -44,10 +44,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Legacy docs are tracked, but exclude any raw data exports
-.legacy/v1-screenshots/*.png
-.legacy/v1-db-schema/*.dump
-
 # Test coverage
 coverage/
 .nyc_output/
@@ -61,3 +57,6 @@ dataset/
 
 /src/generated/prisma
 node_modules
+
+# Test case scripts and code 
+route.test.ts
