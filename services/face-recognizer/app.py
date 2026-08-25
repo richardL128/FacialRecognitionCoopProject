@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 from slowapi import Limiter
@@ -75,7 +75,6 @@ async def rate_limit_handler(request, exc: RateLimitExceeded):
 
 
 @app.get("/health")
-@limiter.limit(_rate_limit_for_path("/health"))
 def health() -> JSONResponse:
     return JSONResponse(
         status_code=200 if _face_analysis else 503,
@@ -88,7 +87,7 @@ def health() -> JSONResponse:
 
 @app.post("/embed")
 @limiter.limit(_rate_limit_for_path("/embed"))
-async def embed(image: UploadFile = File(...)) -> dict[str, Any]:
+async def embed(request: Request, image: UploadFile = File(...)) -> dict[str, Any]:
     if _face_analysis is None:
         raise HTTPException(status_code=503, detail=_startup_error or "FaceAnalysis not initialized")
 

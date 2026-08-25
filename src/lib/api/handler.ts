@@ -65,6 +65,14 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
       });
     }
 
+    const log = requestLogger({
+      method: request.method,
+      path: url.pathname,
+      tenantId: session.tenantId,
+      userId: session.userId,
+      requestId,
+    });
+
     // 2. Rate limiting — per-user or per-IP sliding window
     const rateKey = extractRateLimitKey(request);
     const rateResult = rateLimit(rateKey, url.pathname);
@@ -87,14 +95,6 @@ export function withApi(handler: ApiHandler, options: ApiRouteOptions = {}) {
       }
       return response;
     }
-
-    const log = requestLogger({
-      method: request.method,
-      path: url.pathname,
-      tenantId: session.tenantId,
-      userId: session.userId,
-      requestId,
-    });
 
     try {
       // 3. Validate body

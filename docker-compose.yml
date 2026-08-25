@@ -1,5 +1,6 @@
 services:
   face-recognizer:
+    platform: linux/amd64
     build:
       context: ./services/face-recognizer
       dockerfile: Dockerfile

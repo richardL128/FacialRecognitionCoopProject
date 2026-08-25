@@ -107,10 +107,10 @@ export function rateLimit(
   const allowed = entries.length < limit;
 
   // Calculate reset time: when the oldest entry in the window expires
-  const resetAt =
-    entries.length > 0
-      ? new Date(entries[0].timestamp + WINDOW_MS)
-      : new Date(now + WINDOW_MS);
+  const oldestEntry = entries[0];
+  const resetAt = oldestEntry
+    ? new Date(oldestEntry.timestamp + WINDOW_MS)
+    : new Date(now + WINDOW_MS);
 
   if (allowed) {
     entries.push({ timestamp: now });
@@ -144,7 +144,8 @@ export function extractRateLimitKey(request: {
   const forwardedFor = request.headers.get('x-forwarded-for');
   if (forwardedFor) {
     // The first IP is the client IP
-    const clientIp = forwardedFor.split(',')[0].trim();
+    const [firstIp] = forwardedFor.split(',');
+    const clientIp = (firstIp ?? forwardedFor).trim();
     return { identifier: `ip:${clientIp}` };
   }
 

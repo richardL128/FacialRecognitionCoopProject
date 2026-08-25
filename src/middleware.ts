@@ -62,10 +62,10 @@ function checkEdgeRateLimit(ip: string, pathname: string): {
   const remaining = Math.max(0, limit - entries.length);
   const allowed = entries.length < limit;
 
-  const resetAt =
-    entries.length > 0
-      ? new Date(entries[0].timestamp + EDGE_WINDOW_MS)
-      : new Date(now + EDGE_WINDOW_MS);
+  const oldestEntry = entries[0];
+  const resetAt = oldestEntry
+    ? new Date(oldestEntry.timestamp + EDGE_WINDOW_MS)
+    : new Date(now + EDGE_WINDOW_MS);
 
   if (allowed) {
     entries.push({ timestamp: now });
@@ -129,7 +129,7 @@ export function middleware(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const rateResult = checkEdgeRateLimit(ip, pathname);
 
-    const responseHeaders = { ...securityHeaders(), ...rateResult };
+    const responseHeaders = securityHeaders();
 
     if (!rateResult.allowed) {
       const retryAfter = Math.ceil((rateResult.resetAt.getTime() - Date.now()) / 1000);
