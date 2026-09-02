@@ -1,0 +1,7 @@
+# aarch64 builds (Apple Silicon).
+# download.pytorch.org/whl/cpu publishes no aarch64 wheels, and there is no
+# "+cpu" local version for this platform — the plain PyPI aarch64 wheel is
+# already CPU-only (no CUDA on aarch64), so it is the correct build to use.
+# Pinning "+cpu" here is what forced the whole service onto emulated linux/amd64.
+torch==2.5.1
+torchvision==0.20.1

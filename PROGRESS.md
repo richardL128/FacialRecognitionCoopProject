@@ -15,6 +15,8 @@ Snapshot: 2026-08-20. This is an implementation ledger, not a speculative roadma
 
 `main` is ahead of `origin/main` and has a mixed staged/unstaged working tree. The staged work includes recognition-route changes and tests, Python service/Docker changes, rate limiting, embedding regeneration, and camera UI changes. It must be reviewed, tested, and committed as a coherent change set before any release branch is cut. The full inventory and other worktree state are in [Handoff](Handoff.md).
 
+On 2026-09-02, recognition status reporting was made employee-specific: the camera flow now distinguishes no enrolment, active indexing, and enrolled-but-unindexed photos by checking the PIN-verified employee's face library, current-model embeddings, centroid, and embedding jobs. Alan Turing's 19 timed-out embedding jobs were requeued successfully in the local development database, producing 19 active embeddings and a 19-sample centroid. The 53-test suite, production build, rebuilt Compose app, and a deployed recognition smoke test passed.
+
 The old scaffold planning, generic LLM prompt, and intern-presentation documents were removed on this snapshot. The active guidance is the root reference files plus scoped `AGENTS.md` files.
 
 ## Priority order
@@ -24,4 +26,3 @@ The old scaffold planning, generic LLM prompt, and intern-presentation documents
 3. Establish biometric governance, secure object storage, secrets, production deployment/monitoring, backups, and incident ownership.
 4. Validate recognition quality, bias, spoof resistance, error handling, and human-review policy with representative approved data.
 5. Complete release hardening: shared rate limiting, vulnerability/dependency scanning, test coverage, load testing, migration rehearsal, and rollback exercise.
-

@@ -465,13 +465,18 @@ describe('GROUP F — Mixed scenarios', () => {
 // ============================================================================
 
 describe('GROUP G — Route handler fallback paths', () => {
-  it('G1: Centroid pipeline throws, legacy fallback also throws → error payload', () => {
-    // Both pipelines fail (e.g., embedding service down)
-    // matchPayload has candidatesEvaluated = 0, algorithm = 'embedding-v1-wrn101-error'
-    // Route handler: status = 'no_match' (not centroid pipeline, fallbackApplied=false)
-    // NOTE: In practice this would show "No confident face match found" with
-    // candidatesEvaluated=0, but the route handler logic maps it to 'no_match'
-    // because useCentroidPipeline=true && fallbackApplied=true → falls through to else branch.
+  it('G1: Centroid pipeline throws, legacy fallback also throws → 500 RECOGNITION_FAILED', () => {
+    // Both pipelines fail on something that is NOT the embedding provider
+    // (e.g., the centroid scan and the vector query both error).
+    // Route handler returns 500 with 'RECOGNITION_FAILED' — it must NOT report
+    // 'no_match', which would claim we compared the face and ruled the employee out.
+  });
+
+  it('G1b: Embedding provider fails → provider error, no legacy retry', () => {
+    // getFaceEmbedding throws a FaceEmbeddingError. Both pipelines call the same
+    // /embed endpoint, so the legacy fallback is skipped rather than repeating the
+    // failure and doubling the caller's wait.
+    // EMBEDDING_SERVICE_UNAVAILABLE → 503, EMBEDDING_SERVICE_FAILED → 502.
   });
 
   it('G2: Centroid pipeline throws, legacy fallback succeeds with no match', () => {
@@ -481,10 +486,9 @@ describe('GROUP G — Route handler fallback paths', () => {
     // This is a valid path to the message.
   });
 
-  it('G3: Legacy pipeline throws (not centroid) → error payload', () => {
-    // Legacy pipeline throws, useCentroidPipeline=false → no fallback attempt
-    // matchPayload has candidatesEvaluated = 0
-    // Route handler: status = 'no_match' (not centroid pipeline branch)
+  it('G3: Legacy pipeline throws (not centroid) → 500 RECOGNITION_FAILED', () => {
+    // Legacy pipeline throws, useCentroidPipeline=false → no fallback attempt.
+    // Route handler returns 500 with 'RECOGNITION_FAILED', not a 200 'no_match'.
   });
 
   it('G4: No face detected in image → 422 error (NOT "No confident face match found")', () => {

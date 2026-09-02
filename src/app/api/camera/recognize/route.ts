@@ -3,9 +3,15 @@ import { z } from 'zod';
 import { Prisma } from '@/generated/prisma/client';
 import { withApi } from '@/lib/api/handler';
 import { auditLog } from '@/lib/audit/logger';
-import { getFaceEmbedding, normalizeEmbeddingVector } from '@/lib/camera/embeddingService';
+import {
+  FaceEmbeddingError,
+  getFaceEmbedding,
+  normalizeEmbeddingVector,
+  type FaceEmbeddingErrorCode,
+} from '@/lib/camera/embeddingService';
 import { getEmbeddingModelKey } from '@/lib/camera/embeddingJobs';
 import { scanCentroidsForProbe } from '@/lib/camera/centroidService';
+import { deriveRecognitionStatus, type EmployeeIndexState } from '@/lib/camera/recognitionStatus';
 import { prisma } from '@/lib/db/prisma';
 import { featureFlags } from '@/lib/feature-flags';
 import { requestLogger } from '@/lib/logger';
@@ -47,7 +53,35 @@ const EMBEDDING_MODEL_KEY = getEmbeddingModelKey();
 const formDataSchema = z.object({
   image: z.instanceof(File),
   excludeCaptureId: z.string().uuid().optional(),
+  expectedEmployeeId: z.string().uuid().optional(),
 });
+
+// A failure to *ask* the question is not a negative *answer*. Every provider failure
+// gets its own status and code so the client can tell "we looked and it isn't you"
+// (200 + status:'no_match') apart from "we never managed to look" (4xx/5xx).
+const FACE_EMBEDDING_ERROR_RESPONSES: Record<
+  FaceEmbeddingErrorCode,
+  { status: number; message: string }
+> = {
+  NO_FACE_DETECTED: {
+    status: 422,
+    message: 'No face detected. Please retake the photo.',
+  },
+  EMBEDDING_SERVICE_UNAVAILABLE: {
+    status: 503,
+    message: 'Face recognition is temporarily unavailable. Please try again shortly.',
+  },
+  EMBEDDING_SERVICE_FAILED: {
+    status: 502,
+    message: 'Face recognition could not process this photo. Please retake it.',
+  },
+};
+
+/** Map a face-embedding provider failure onto its HTTP error response. */
+function faceEmbeddingErrorResponse(error: FaceEmbeddingError): NextResponse {
+  const mapped = FACE_EMBEDDING_ERROR_RESPONSES[error.code];
+  return NextResponse.json(apiError(error.code, mapped.message), { status: mapped.status });
+}
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -99,6 +133,68 @@ type MatchPayload = {
   algorithm: string;
   telemetry: MatchTelemetry;
 };
+
+type EmployeeIndexStateRow = EmployeeIndexState & {
+  employeeId: string;
+};
+
+async function getEmployeeIndexState(
+  tenantId: string,
+  employeeId: string,
+): Promise<EmployeeIndexState | null> {
+  const rows = await prisma.$queryRaw<EmployeeIndexStateRow[]>`
+    SELECT
+      ep.id AS "employeeId",
+      (
+        SELECT count(*)::int
+        FROM employee_face_library efl
+        WHERE efl.tenant_id = ep.tenant_id
+          AND efl.employee_profile_id = ep.id
+      ) AS "enrolledPhotoCount",
+      (
+        SELECT count(*)::int
+        FROM face_embeddings fe
+        WHERE fe.tenant_id = ep.tenant_id
+          AND fe.employee_profile_id = ep.id
+          AND fe.model_key = ${EMBEDDING_MODEL_KEY}
+          AND fe.active = true
+          AND fe.embedding_vec IS NOT NULL
+      ) AS "activeEmbeddingCount",
+      (
+        SELECT count(*)::int
+        FROM face_employee_centroids fec
+        WHERE fec.tenant_id = ep.tenant_id
+          AND fec.employee_profile_id = ep.id
+          AND fec.model_key = ${EMBEDDING_MODEL_KEY}
+          AND fec.sample_count > 0
+      ) AS "centroidCount",
+      (
+        SELECT count(*)::int
+        FROM face_embedding_jobs fej
+        WHERE fej.tenant_id = ep.tenant_id
+          AND fej.employee_profile_id = ep.id
+          AND fej.model_key = ${EMBEDDING_MODEL_KEY}
+          AND fej.status IN ('pending', 'running')
+      ) AS "activeJobCount"
+    FROM employee_profiles ep
+    WHERE ep.id = ${employeeId}::uuid
+      AND ep.tenant_id = ${tenantId}::uuid
+      AND ep.active = true
+    LIMIT 1
+  `;
+
+  const state = rows[0];
+  if (!state) {
+    return null;
+  }
+
+  return {
+    enrolledPhotoCount: state.enrolledPhotoCount,
+    activeEmbeddingCount: state.activeEmbeddingCount,
+    centroidCount: state.centroidCount,
+    activeJobCount: state.activeJobCount,
+  };
+}
 
 // ─── Stage-B helpers (shared by centroid and legacy pipeline) ────────────────
 
@@ -498,6 +594,7 @@ export const POST = withApi(
     const parsed = formDataSchema.safeParse({
       image: formData.get('image'),
       excludeCaptureId: formData.get('excludeCaptureId') ?? undefined,
+      expectedEmployeeId: formData.get('expectedEmployeeId') ?? undefined,
     });
 
     if (!parsed.success) {
@@ -509,6 +606,14 @@ export const POST = withApi(
 
     if (!canUser(session, 'camera:capture:read')) {
       return NextResponse.json(apiError('FORBIDDEN', 'Insufficient permissions'), { status: 403 });
+    }
+
+    const expectedEmployeeIndexState = parsed.data.expectedEmployeeId
+      ? await getEmployeeIndexState(session.tenantId, parsed.data.expectedEmployeeId)
+      : null;
+
+    if (parsed.data.expectedEmployeeId && !expectedEmployeeIndexState) {
+      return NextResponse.json(apiError('NOT_FOUND', 'Employee not found'), { status: 404 });
     }
 
     const rawFile = parsed.data.image;
@@ -540,15 +645,25 @@ export const POST = withApi(
       }
     } catch (error) {
       fallbackReason = error instanceof Error ? error.message : 'embedding_provider_error';
-      const isNoFaceError = fallbackReason.toLowerCase().includes('no face detected');
-      if (isNoFaceError) {
-        return NextResponse.json(
-          apiError('NO_FACE_DETECTED', 'No face detected. Please retake the photo.'),
-          { status: 422 },
+
+      // The embedding provider itself failed. Both pipelines call the same /embed
+      // endpoint, so retrying the legacy one would just repeat the failure and double
+      // the caller's wait — surface the real error instead of degrading to 'no_match'.
+      if (error instanceof FaceEmbeddingError) {
+        routeLog.warn(
+          {
+            err: error,
+            code: error.code,
+            providerStatus: error.providerStatus,
+            usedCentroidPipeline: useCentroidPipeline,
+          },
+          'Face embedding provider failed — returning error to caller',
         );
+        return faceEmbeddingErrorResponse(error);
       }
 
-      // If centroid pipeline threw, try legacy as a safety fallback.
+      // Not a provider failure (e.g. the centroid scan or vector query broke).
+      // The legacy pipeline reads different tables, so it is worth one attempt.
       if (useCentroidPipeline) {
         try {
           fallbackApplied = true;
@@ -557,47 +672,29 @@ export const POST = withApi(
             session.tenantId,
             parsed.data.excludeCaptureId,
           );
-        } catch {
-          matchPayload = {
-            recognition: { matched: false, best: null, candidatesEvaluated: 0 },
-            algorithm: 'embedding-v1-wrn101-error',
-            telemetry: {
-              providerAttempted: 'embedding',
-              algorithm: 'embedding-v1-wrn101-error',
-              durationMs: 0,
-              centroidsScanned: 0,
-              centroidDurationMs: 0,
-              shortlistedEmployees: 0,
-              candidatesRequested: 0,
-              candidatesEvaluated: 0,
-              candidateReadErrors: 0,
-              candidateComputeErrors: 1,
-              topConfidence: null,
-              secondConfidence: null,
-              confidenceGap: null,
-            },
-          };
+        } catch (fallbackError) {
+          if (fallbackError instanceof FaceEmbeddingError) {
+            routeLog.warn(
+              { err: fallbackError, code: fallbackError.code, originalReason: fallbackReason },
+              'Face embedding provider failed during legacy fallback',
+            );
+            return faceEmbeddingErrorResponse(fallbackError);
+          }
+          routeLog.error(
+            { err: fallbackError, originalReason: fallbackReason },
+            'Recognition failed in both centroid and legacy pipelines',
+          );
+          return NextResponse.json(
+            apiError('RECOGNITION_FAILED', 'Face recognition failed. Please try again.'),
+            { status: 500 },
+          );
         }
       } else {
-        matchPayload = {
-          recognition: { matched: false, best: null, candidatesEvaluated: 0 },
-          algorithm: 'embedding-v1-wrn101-error',
-          telemetry: {
-            providerAttempted: 'embedding',
-            algorithm: 'embedding-v1-wrn101-error',
-            durationMs: 0,
-            centroidsScanned: 0,
-            centroidDurationMs: 0,
-            shortlistedEmployees: 0,
-            candidatesRequested: 0,
-            candidatesEvaluated: 0,
-            candidateReadErrors: 0,
-            candidateComputeErrors: 1,
-            topConfidence: null,
-            secondConfidence: null,
-            confidenceGap: null,
-          },
-        };
+        routeLog.error({ err: error }, 'Recognition failed in the legacy pipeline');
+        return NextResponse.json(
+          apiError('RECOGNITION_FAILED', 'Face recognition failed. Please try again.'),
+          { status: 500 },
+        );
       }
     }
 
@@ -607,19 +704,14 @@ export const POST = withApi(
     const isConfidentMatch =
       recognition.matched && !!recognition.best && recognition.best.confidence >= minConfidence;
 
-    // Status derivation:
-    //  - 'not_enrolled'    → centroid pipeline ran, no centroids exist (no enrolled photos at all)
-    //  - 'insufficient_data' → centroid pipeline ran, centroid similarity below floor
-    //  - 'no_match'        → legacy pipeline, fallback path, or candidates evaluated but none confident
-    const status = isConfidentMatch
-      ? 'matched'
-      : recognition.candidatesEvaluated > 0
-        ? 'no_match'
-        : useCentroidPipeline && !fallbackApplied
-          ? telemetry.centroidsScanned === 0
-            ? 'not_enrolled'
-            : 'insufficient_data'
-          : 'no_match';
+    const status = deriveRecognitionStatus({
+      isConfidentMatch,
+      candidatesEvaluated: recognition.candidatesEvaluated,
+      useCentroidPipeline,
+      fallbackApplied,
+      centroidsScanned: telemetry.centroidsScanned,
+      expectedEmployeeIndexState,
+    });
 
     await auditLog({
       tenantId: session.tenantId,

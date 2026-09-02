@@ -55,5 +55,5 @@ Raw SQL migrations are the deployment source of truth; keep Prisma’s schema al
 
 ## Operational components
 
-`docker-compose.yml` starts PostgreSQL with pgvector, migrations, a vector backfill, the face-recognizer, the embedding worker, and the app. It is a local development topology, not a production deployment design. `Face_Recognition` is a dirty Gitlink without a `.gitmodules` mapping; resolve its ownership and pinned source before relying on it in a build.
+`docker-compose.yml` starts PostgreSQL with pgvector, migrations, a vector backfill, the face-recognizer, the embedding worker, and the app. It is a local development topology, not a production deployment design. `Face_Recognition` holds the training and inference scripts vendored from the Hugging Face repo `biometric-ai-lab/Face_Recognition`; see `Face_Recognition/README.md` for the commit they were copied from.
 

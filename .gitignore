@@ -7,6 +7,14 @@ node_modules/
 .next/
 out/
 build/
+*.tsbuildinfo
+
+# Face_Recognition model weights. services/face-recognizer/inference.py downloads
+# both from Hugging Face at runtime via hf_hub_download, so they are never
+# committed here. The upstream repo tracks them with Git LFS; this repo does not
+# use LFS.
+/Face_Recognition/pytorch_model.bin
+/Face_Recognition/yolov8s-face-lindevs.onnx
 
 # Environment files — NEVER commit these
 .env

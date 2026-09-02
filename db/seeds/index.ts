@@ -64,6 +64,35 @@ async function main() {
   }
 
   console.log(`✓ Users: ${users.length} users seeded`);
+
+  // ── Employee profiles ─────────────────────────────────────
+  // Gives the Employee Database page (/feature-a) something to render on a
+  // fresh instance. No pin_code — PINs are hashed, so they are set through
+  // the UI rather than seeded. Photos are enrolled via /feature-a/photos.
+  const employeeProfiles = [
+    { firstName: 'Ada', name: 'Ada Lovelace', email: 'ada@acme.com', tenantId: tenant1.id },
+    { firstName: 'Grace', name: 'Grace Hopper', email: 'grace@acme.com', tenantId: tenant1.id },
+    { firstName: 'Alan', name: 'Alan Turing', email: 'alan@acme.com', tenantId: tenant1.id },
+    { firstName: 'Katherine', name: 'Katherine Johnson', email: 'katherine@globex.com', tenantId: tenant2.id },
+  ];
+
+  let createdProfiles = 0;
+  for (const profile of employeeProfiles) {
+    // EmployeeProfile has no unique key to upsert on, so guard on tenant + name.
+    const existing = await prisma.employeeProfile.findFirst({
+      where: { tenantId: profile.tenantId, name: profile.name },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      await prisma.employeeProfile.create({ data: profile });
+      createdProfiles += 1;
+    }
+  }
+
+  console.log(
+    `✓ Employee profiles: ${createdProfiles} created, ${employeeProfiles.length - createdProfiles} already present`,
+  );
   console.log('\nSeed complete.');
 }
 

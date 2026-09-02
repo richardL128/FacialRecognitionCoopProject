@@ -1,0 +1,6 @@
+# x86_64 builds (Windows/Linux dev machines, CI, prod).
+# PyPI's default torch wheel for x86_64 bundles CUDA (~2.5GB), so we pull the
+# explicitly CPU-only "+cpu" build from PyTorch's own index instead.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu

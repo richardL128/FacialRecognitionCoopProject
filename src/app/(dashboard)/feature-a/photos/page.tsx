@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState 
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { describeCameraError, requestCameraStream } from '@/lib/camera/cameraAccess';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 type Employee = {
@@ -328,14 +329,7 @@ function EmployeePhotoAccessPage() {
   async function startCamera() {
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
+      const stream = await requestCameraStream('user');
 
       streamRef.current = stream;
       if (videoRef.current) {
@@ -343,8 +337,9 @@ function EmployeePhotoAccessPage() {
         await videoRef.current.play();
       }
       setCameraActive(true);
-    } catch {
-      setError('Unable to access onboard camera. Check browser permissions and try again.');
+    } catch (err) {
+      console.error('Camera start failed', err);
+      setError(describeCameraError(err));
     }
   }
 

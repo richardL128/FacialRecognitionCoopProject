@@ -83,7 +83,12 @@ function securityHeaders(): HeadersInit {
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '0', // Modern browsers use CSP instead
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    // Camera capture is this app's core feature, so the camera must be allowed
+    // for our own origin — camera=() denies it to everyone including us, which
+    // makes getUserMedia fail before any permission prompt can appear.
+    // Microphone and geolocation stay denied: nothing requests them (both
+    // getUserMedia call sites pass audio: false).
+    'Permissions-Policy': 'camera=(self), microphone=(), geolocation=()',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   };
 }

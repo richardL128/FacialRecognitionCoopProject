@@ -3,9 +3,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { PIN_MAX_LENGTH, PIN_MIN_LENGTH, sanitizePinInput } from '@/lib/auth/pinSanitization';
+import { describeCameraError, requestCameraStream } from '@/lib/camera/cameraAccess';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 type UploadState = 'idle' | 'capturing' | 'uploading' | 'success' | 'error';
+
+/** Carries the API error code through the catch so it can drive recovery, not just wording. */
+class RecognitionError extends Error {
+  readonly code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'RecognitionError';
+    this.code = code;
+  }
+}
+
+/** Operator-facing wording for the error codes /api/camera/recognize can return. */
+const RECOGNITION_ERROR_MESSAGES: Record<string, string> = {
+  NO_FACE_DETECTED: 'No face detected. Please retake your photo.',
+  EMBEDDING_SERVICE_UNAVAILABLE: 'Face service unavailable. Please try again shortly.',
+  EMBEDDING_SERVICE_FAILED: 'Face service could not process this photo. Please retake it.',
+  RECOGNITION_FAILED: 'Face recognition failed. Please try again.',
+};
 
 type UploadResponse = {
   success: boolean;
@@ -29,8 +49,7 @@ type RecognitionResponse = {
       | 'insufficient_data'
       | 'not_enrolled'
       | 'indexing_in_progress'
-      | 'not_indexed'
-      | 'service_unavailable';
+      | 'not_indexed';
     confidence: number | null;
     distance: number | null;
     candidatesEvaluated: number;
@@ -249,7 +268,6 @@ export default function CameraCapturePanel() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [captureImageUrl, setCaptureImageUrl] = useState<string | null>(null);
-  const [latestCaptureId, setLatestCaptureId] = useState<string | null>(null);
   const [recognitionLoading, setRecognitionLoading] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResponse['data'] | null>(
     null,
@@ -260,48 +278,61 @@ export default function CameraCapturePanel() {
     true,
   );
 
-  const runRecognition = useCallback(async (imageBlob: Blob, excludeCaptureId?: string) => {
-    setRecognitionLoading(true);
-    try {
-      const formData = new FormData();
-      const file = new File([imageBlob], 'recognize.jpg', { type: 'image/jpeg' });
-      formData.append('image', file);
-      if (excludeCaptureId) {
-        formData.append('excludeCaptureId', excludeCaptureId);
-      }
-
-      const response = await fetch('/api/camera/recognize', {
-        method: 'POST',
-        body: formData,
-      });
-      const payload = (await response.json()) as RecognitionResponse;
-
-      if (!response.ok || !payload.success || !payload.data) {
-        if (payload.error?.code === 'NO_FACE_DETECTED') {
-          throw new Error('No face detected. Please retake your photo.');
+  const runRecognition = useCallback(
+    async (imageBlob: Blob, excludeCaptureId?: string, expectedEmployeeId?: string) => {
+      setRecognitionLoading(true);
+      try {
+        const formData = new FormData();
+        const file = new File([imageBlob], 'recognize.jpg', { type: 'image/jpeg' });
+        formData.append('image', file);
+        if (excludeCaptureId) {
+          formData.append('excludeCaptureId', excludeCaptureId);
         }
-        if (payload.error?.code === 'EMBEDDING_SERVICE_UNAVAILABLE') {
-          throw new Error('Face service unavailable. Please try again shortly.');
+        if (expectedEmployeeId) {
+          formData.append('expectedEmployeeId', expectedEmployeeId);
         }
-        throw new Error(payload.error?.message ?? 'Recognition failed');
-      }
 
-      setRecognitionResult(payload.data);
-    } catch (error) {
-      setRecognitionResult(null);
-      const message = error instanceof Error ? error.message : 'Recognition failed';
-      if (message.toLowerCase().includes('no face detected')) {
+        const response = await fetch('/api/camera/recognize', {
+          method: 'POST',
+          body: formData,
+        });
+        const payload = (await response.json()) as RecognitionResponse;
+
+        if (!response.ok || !payload.success || !payload.data) {
+          throw new RecognitionError(
+            payload.error?.code ?? 'RECOGNITION_FAILED',
+            RECOGNITION_ERROR_MESSAGES[payload.error?.code ?? ''] ??
+              payload.error?.message ??
+              'Recognition failed. Please try again.',
+          );
+        }
+
+        setRecognitionResult(payload.data);
+      } catch (error) {
+        setRecognitionResult(null);
+        const code = error instanceof RecognitionError ? error.code : 'RECOGNITION_FAILED';
+        const message =
+          error instanceof Error ? error.message : 'Recognition failed. Please try again.';
+
+        // Every failure must move the panel into 'error' — the status banner only
+        // renders errorMessage in that state, so setting the message alone leaves the
+        // green "captured successfully" banner from the upload standing and the failure
+        // invisible.
         setState('error');
-        setCaptureImageUrl(null);
-        setPreviewDataUrl(null);
-        setErrorMessage('No face detected. Please retake your photo.');
-        return;
+        setErrorMessage(message);
+
+        // Only a rejected photo is worth discarding. A service outage says nothing
+        // about the capture itself, so keep it on screen for the retry.
+        if (code === 'NO_FACE_DETECTED') {
+          setCaptureImageUrl(null);
+          setPreviewDataUrl(null);
+        }
+      } finally {
+        setRecognitionLoading(false);
       }
-      setErrorMessage(message);
-    } finally {
-      setRecognitionLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -313,23 +344,17 @@ export default function CameraCapturePanel() {
     setState('capturing');
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
+      const stream = await requestCameraStream('environment');
 
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-    } catch {
+    } catch (error) {
+      console.error('Camera start failed', error);
       setState('error');
-      setErrorMessage('Unable to access camera. Check browser permissions and try again.');
+      setErrorMessage(describeCameraError(error));
     }
   }, []);
 
@@ -390,14 +415,13 @@ export default function CameraCapturePanel() {
 
       stopStream();
       setCaptureImageUrl(payload.data.imageUrl);
-      setLatestCaptureId(payload.data.captureId);
       setState('success');
-      await runRecognition(imageBlob, payload.data.captureId);
+      await runRecognition(imageBlob, payload.data.captureId, verifiedEmployee?.employeeId);
     } catch (error) {
       setState('error');
       setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
     }
-  }, [runRecognition, stopStream]);
+  }, [runRecognition, stopStream, verifiedEmployee?.employeeId]);
 
   const resetCapture = useCallback(() => {
     setCaptureImageUrl(null);
@@ -405,7 +429,6 @@ export default function CameraCapturePanel() {
     setState('idle');
     setErrorMessage(null);
     setRecognitionResult(null);
-    setLatestCaptureId(null);
   }, []);
 
   useEffect(() => {
@@ -755,19 +778,11 @@ export default function CameraCapturePanel() {
               );
             }
 
-            if (recognitionResult.status === 'service_unavailable') {
-              return (
-                <div className="mt-3 rounded-md border border-[rgb(var(--pe-red-100))] bg-[rgb(var(--pe-red-10))] px-3 py-3">
-                  <p className="pe-body" style={{ color: 'rgb(var(--pe-red-100))' }}>
-                    PIN verified as <strong>{verifiedEmployee?.displayName}</strong>, but face
-                    recognition is temporarily unavailable.
-                  </p>
-                  <p className="pe-small mt-1" style={{ color: 'rgb(var(--pe-grey-70))' }}>
-                    The face embedding service is not responding right now. Please retry shortly.
-                  </p>
-                </div>
-              );
-            }
+            // There is deliberately no `if` block for a 'service_unavailable'
+            // status: when the face embedding service is down
+            // /api/camera/recognize returns HTTP 503 with the error code
+            // EMBEDDING_SERVICE_UNAVAILABLE, which runRecognition's `catch`
+            // handles, so no recognitionResult is ever set in that case.
 
             return (
               <div className="mt-3 rounded-md border border-[rgb(var(--pe-yellow-100))] bg-[rgb(var(--pe-yellow-10))] px-3 py-3">

@@ -1,0 +1,8 @@
+{
+  "model_type": "face_recognition",
+  "backbone": "wide_resnet101_2",
+  "embedding_size": 512,
+  "num_classes": 100,
+  "test_accuracy": 90.5,
+  "test_dataset": "LFW"
+}
